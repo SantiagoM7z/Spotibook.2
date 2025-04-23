@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:spotibook2/Pages/TermsYCond.dart';
 import 'package:spotibook2/Pages/Home.dart';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Services/firestore_service.dart';
 
