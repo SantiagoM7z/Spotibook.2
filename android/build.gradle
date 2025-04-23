@@ -1,0 +1,30 @@
+buildscript {
+    repositories {
+        google()  // Asegúrate de tener el repositorio de Google
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.0.0'  // Ajusta la versión si es necesario
+        classpath 'com.google.gms:google-services:4.3.10'  // Google Services Plugin
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10"
+    }
+}
+
+allprojects {
+    repositories {
+        google()  // Asegúrate de que Google esté presente
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}

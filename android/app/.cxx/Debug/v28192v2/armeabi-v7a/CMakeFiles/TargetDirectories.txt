@@ -1,0 +1,2 @@
+C:/Users/santi/Documents/Flutter Proyectos/spotibook.2/spotibook2/android/app/.cxx/Debug/v28192v2/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/santi/Documents/Flutter Proyectos/spotibook.2/spotibook2/android/app/.cxx/Debug/v28192v2/armeabi-v7a/CMakeFiles/rebuild_cache.dir

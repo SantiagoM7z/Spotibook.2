@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1090105547909",
+    "project_id": "spotibook-736fe",
+    "storage_bucket": "spotibook-736fe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1090105547909:android:1c58120fd991ecc8189dec",
+        "android_client_info": {
+          "package_name": "com.example.spotibook2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_uqJPJhBvOr_xe_mAHjnx4e4mBCKT9VQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

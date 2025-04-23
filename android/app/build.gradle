@@ -1,0 +1,45 @@
+plugins {
+    id "com.android.application"
+    id 'com.google.gms.google-services'  // Asegúrate de que este plugin esté incluido
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+android {
+    namespace = "com.example.spotibook2"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = "29.0.13113456"
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    defaultConfig {
+        applicationId = "com.example.spotibook2"
+        minSdkVersion "23"
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+        
+        buildConfigField("boolean", "USE_FIREBASE", "true")  // Asegúrate de que esté habilitado
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.debug
+        }
+    }
+
+    buildFeatures {
+        buildConfig true  // Esta línea es la que activa los BuildConfig
+    }
+}
+
+flutter {
+    source = "../.."
+}
