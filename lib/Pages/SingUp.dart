@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:spotibook2/Pages/TermsYCond.dart';
+import 'package:spotibook2/Pages/Home.dart';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:spotibook2/Services/Auth_Service.dart';
+import 'package:spotibook2/Services/firestore_service.dart';
 
 class SingUp extends StatefulWidget {
   final String UserType;
@@ -110,8 +115,18 @@ class _SingUpState extends State<SingUp> {
                 ],
               ),
               ElevatedButton(
-                onPressed: isformvalid ? () {
-                  print("Formulario válido, datos listos para enviar");
+                onPressed: isformvalid ? () async {
+                  final email = correoController.text;
+                  final nombre = nombreController.text;
+                  final contrasenia = contraseniaController.text;
+
+                  final user = await AuthService().registerWithEmailPassword(email, contrasenia);
+                  if (user != null) {
+                    await FirestoreService().saveUser(user);
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Home()));
+                  } else {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al Registrar")));
+                  }
                 } : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isformvalid ? const Color(0xff2E4D4D) : Colors.grey,),
