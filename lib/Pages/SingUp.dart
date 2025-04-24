@@ -37,7 +37,7 @@ class _SingUpState extends State<SingUp> {
     });
   }
 
-  //* Validación RFC Empresa(Editorial) 
+  //* Validación RFC Empresa(Editorial)
   bool esRFCDeEmpresa(String rfc) {
     final regex = RegExp(r'^[A-ZÑ&]{3}\d{6}[A-Z0-9]{3}$');
     return regex.hasMatch(rfc.toUpperCase());
@@ -116,22 +116,29 @@ class _SingUpState extends State<SingUp> {
               ElevatedButton(
                 onPressed: isformvalid ? () async {
                   final email = correoController.text;
-                  final nombre = nombreController.text;
+                  final username = nombreController.text;
                   final contrasenia = contraseniaController.text;
+                  final userType = widget.UserType;  // Obtener el tipo de usuario
 
                   final user = await AuthService().registerWithEmailPassword(email, contrasenia);
                   if (user != null) {
-                    await FirestoreService().saveUser(user);
+                    // Guardar usuario con el tipo de cuenta
+                    await FirestoreService().saveUser(user, username, userType);
                     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Home()));
                   } else {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al Registrar")));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al Registrar")));
                   }
                 } : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isformvalid ? const Color(0xff2E4D4D) : Colors.grey,),
-                child: const Text("Registrarse", style: TextStyle(fontSize: 15, color: Colors.white)),),
+                  backgroundColor: isformvalid ? const Color(0xff2E4D4D) : Colors.grey,
+                ),
+                child: const Text("Registrarse", style: TextStyle(fontSize: 15, color: Colors.white)),
+              ),
             ],
-          ),),),);
+          ),
+        ),
+      ),
+    );
   }
 
   Widget correo() => campoTexto("Correo", correoController, TextInputType.emailAddress, true, validator: (value) {
@@ -149,10 +156,10 @@ class _SingUpState extends State<SingUp> {
   });
 
   Widget confirmcontrasenia() => campoTexto("Confirme la contraseña", confirmContraseniaController, TextInputType.visiblePassword, true, 
-  obscure: true, validator: (value) {
-    if (value == null || value.isEmpty) return "Confirme la contraseña";
-    if (value != contraseniaController.text) return "Las contraseñas no coinciden";
-    return null;
+    obscure: true, validator: (value) {
+      if (value == null || value.isEmpty) return "Confirme la contraseña";
+      if (value != contraseniaController.text) return "Las contraseñas no coinciden";
+      return null;
   });
 
   Widget nombrelegal() => campoTexto("Nombre Legal de la Editorial", nombreLegalController, TextInputType.text, true);
@@ -175,7 +182,7 @@ class _SingUpState extends State<SingUp> {
   Widget telefono() => campoTexto("Teléfono de Contacto", telefonoController, TextInputType.phone, true);
 
   Widget campoTexto(String hint, TextEditingController controller, TextInputType tipo, bool obligatorio,
-  {bool obscure = false, String? Function(String?)? validator}) {
+    {bool obscure = false, String? Function(String?)? validator}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: TextFormField(
@@ -194,7 +201,9 @@ class _SingUpState extends State<SingUp> {
                 }
                 return null;
               }
-            : null),),);
+            : null),
+      ),
+    );
   }
 
   Widget UserTypeField(String tipoUsuario) {
@@ -207,6 +216,8 @@ class _SingUpState extends State<SingUp> {
           labelText: "Tipo de Usuario",
           fillColor: Colors.white,
           filled: true,
-        ),),);
+        ),
+      ),
+    );
   }
 }

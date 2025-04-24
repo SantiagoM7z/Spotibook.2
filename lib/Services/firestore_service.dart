@@ -5,12 +5,13 @@ class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // * Guardar los datos del usuario en Firestore
-  Future<void> saveUser(User user) async {
+  Future<void> saveUser(User user, String username, String userType) async {
     try {
       Map<String, dynamic> userModel = {
         'uid': user.uid,
         'email': user.email,
-        'nombre': user.displayName ?? "No Name",
+        'username': username, // Añadido el campo 'username'
+        'userType': userType, // Añadido el campo 'userType'
       };
 
       await _db.collection('users').doc(user.uid).set(userModel);
