@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart'; 
-import 'package:spotibook2/Pages/Home.dart';
+import 'package:spotibook2/Pages/Index/Catalogo.dart';
+import 'package:spotibook2/Pages/Index/Administradores.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
+import 'package:spotibook2/Services/firestore_service.dart';
 
 class SingIn extends StatefulWidget {
   const SingIn({super.key});
@@ -13,7 +15,6 @@ class SingIn extends StatefulWidget {
 class _SingInState extends State<SingIn> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers
   TextEditingController correoORnombreController = TextEditingController();
   TextEditingController contraseniaController = TextEditingController();
 
@@ -98,7 +99,7 @@ class _SingInState extends State<SingIn> {
                     onChanged: (bool? value) {
                       setState(() {
                         isRememberMeChecked = value!;
-                        _saveRememberMe(isRememberMeChecked);  // Guardar la opción
+                        _saveRememberMe(isRememberMeChecked);
                       });
                     },
                   ),
@@ -114,17 +115,16 @@ class _SingInState extends State<SingIn> {
                         try {
                           final user = await AuthService().signInWithEmailOrUsername(emailOrUsername, password);
                           if (user != null) {
-                            // Redirigir a la página de inicio si el usuario se autentica correctamente
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => Home()),
-                            );
+                            // Verificar el tipo de usuario desde Firestore en la colección 'users'
+                            final userType = await FirestoreService().getUserType(user.uid);
+                            if (userType == "Admin") {
+                              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Administradores()));
+                            } else {
+                              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Catalogo()));
+                            }
                           }
                         } catch (e) {
-                          // Mostrar el error en un Snackbar si ocurre algo al iniciar sesión
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text("Error al iniciar sesión: $e"),
-                          ));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al iniciar sesión: $e")));
                         }
                       }
                     : null,
@@ -145,34 +145,29 @@ class _SingInState extends State<SingIn> {
     return null;
   });
 
-  Widget _contrasenia() => _campoTexto("Contraseña", contraseniaController, TextInputType.visiblePassword, true,
-      obscure: true, validator: (value) {
+  Widget _contrasenia() => _campoTexto("Contraseña", contraseniaController, TextInputType.visiblePassword, true, obscure: true, validator: (value) {
     if (value == null || value.isEmpty) return "Contraseña obligatoria";
     return null;
   });
 
-  Widget _campoTexto(String hint, TextEditingController controller, TextInputType tipo, bool obligatorio,
-      {bool obscure = false, String? Function(String?)? validator}) {
+  Widget _campoTexto(String hint, TextEditingController controller, TextInputType tipo, bool obligatorio, {bool obscure = false, String? Function(String?)? validator}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: TextFormField(
         controller: controller,
         keyboardType: tipo,
-        obscureText: obscure,
+        obscureText: obscure,  // Solo en el campo de contraseña, el texto será ocultado
         decoration: InputDecoration(
           hintText: hint,
           fillColor: Colors.white,
           filled: true,
         ),
-        validator: validator ??
-            (obligatorio
-                ? (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Este campo es obligatorio";
-                    }
-                    return null;
-                  }
-                : null),
+        validator: validator ?? (obligatorio ? (value) {
+          if (value == null || value.isEmpty) {
+            return "Este campo es obligatorio";
+          }
+          return null;
+        } : null),
       ),
     );
   }

@@ -10,8 +10,8 @@ class FirestoreService {
       Map<String, dynamic> userModel = {
         'uid': user.uid,
         'email': user.email,
-        'username': username, // Añadido el campo 'username'
-        'userType': userType, // Añadido el campo 'userType'
+        'username': username,
+        'userType': userType,
       };
 
       await _db.collection('users').doc(user.uid).set(userModel);
@@ -20,16 +20,35 @@ class FirestoreService {
     }
   }
 
-  // Obtener un usuario por su UID
-  Future<Map<String, dynamic>?> getUserByUid(String uid) async {
+  // * Guardar la información de la editorial en Firestore
+  Future<void> saveEditorial(User user, String nombreLegal, String rfc, String direccion, String telefono) async {
+    try {
+      Map<String, dynamic> editorialModel = {
+        'uid': user.uid,
+        'email': user.email,
+        'nombreLegal': nombreLegal,
+        'rfc': rfc,
+        'direccion': direccion,
+        'telefono': telefono,
+        'userType': 'Editorial',
+      };
+
+      await _db.collection('editoriales').doc(user.uid).set(editorialModel);
+    } catch (e) {
+      print("Error al guardar la editorial en Firestore: $e");
+    }
+  }
+
+  Future<String?> getUserType(String uid) async {
     try {
       DocumentSnapshot doc = await _db.collection('users').doc(uid).get();
+
       if (doc.exists) {
-        return doc.data() as Map<String, dynamic>;
+        return doc['userType'];
       }
       return null;
     } catch (e) {
-      print("Error al obtener el usuario de Firestore: $e");
+      print("Error al obtener tipo de usuario desde 'users': $e");
       return null;
     }
   }

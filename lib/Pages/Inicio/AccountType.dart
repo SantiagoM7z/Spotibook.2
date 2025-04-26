@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spotibook2/Pages/SingUp.dart';
+import 'package:spotibook2/Pages/Inicio/SingUp.dart';
 
 class AccountType extends StatelessWidget {
   const AccountType({super.key});

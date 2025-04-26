@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';  // Importa firebase_core
 import 'firebase_options.dart';  // Importa firebase_options.dart generado por FlutterFire CLI
 
-import 'package:spotibook2/Pages/AccountType.dart';
-import 'package:spotibook2/Pages/HelpCenter.dart';
-import 'package:spotibook2/Pages/SingIn.dart';
-import 'package:spotibook2/Pages/TermsYCond.dart';
+import 'package:spotibook2/Pages/Inicio/AccountType.dart';
+import 'package:spotibook2/Pages/Suport/HelpCenter.dart';
+import 'package:spotibook2/Pages/Inicio/SingIn.dart';
+import 'package:spotibook2/Pages/Suport/TermsYCond.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();  // Asegúrate de que Flutter esté inicializado
@@ -34,7 +34,8 @@ class Spotibook extends StatelessWidget {
                 fontFamily:"Lora",
                 color: Colors.black,
                 fontSize: 30,
-                fontWeight: FontWeight.bold),),
+                fontWeight: FontWeight.bold),
+                ),
               
 
               Text("SpotiBook", textAlign: TextAlign.center,
@@ -42,30 +43,36 @@ class Spotibook extends StatelessWidget {
                 fontFamily:"Lora",
                 color: Colors.black,
                 fontSize: 30,
-                fontWeight: FontWeight.bold),),
+                fontWeight: FontWeight.bold),
+                ),
 
               ElevatedButton(onPressed: () {
                 Navigator.push(context,
-                  MaterialPageRoute(builder: (context)=>SingIn()));
+                  MaterialPageRoute(builder: (context)=>SingIn()
+                  )
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xff2E4D4D),
                 padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15)
                 ),
-              child: Text("Iniciar Sesión", style: TextStyle(
-                fontSize: 20,
-                color: Colors.white
-              ),),),
+                child: Text("Iniciar Sesión", style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.white),
+                  ),
+                ),
 
               TextButton(onPressed: () {
                 Navigator.push(context,
-                  MaterialPageRoute(builder: (context)=>AccountType()));
+                  MaterialPageRoute(builder: (context)=>AccountType())
+                  );
               },
               style: TextButton.styleFrom(
                 foregroundColor: Color(0xff2E4D4D),
                 textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              child: Text("Registrarse"),),
+              child: Text("Registrarse"),
+              ),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -73,25 +80,29 @@ class Spotibook extends StatelessWidget {
                 children: [
                 TextButton(onPressed: () {
                   Navigator.push(context,
-                    MaterialPageRoute(builder: (context)=>TermsYCond()));
+                    MaterialPageRoute(builder: (context)=>TermsYCond())
+                    );
                 },
                 style: TextButton.styleFrom(
                   foregroundColor: Color(0xff2E4D4D),
                   textStyle: TextStyle(fontSize: 10,
                   ),),
               child: Text("Terminos y Condiciones"),),
-
               TextButton(onPressed: () {
                 Navigator.push(context,
-                  MaterialPageRoute(builder: (context)=>HelpCenter()));
+                  MaterialPageRoute(builder: (context)=>HelpCenter())
+                  );
               },
               style: TextButton.styleFrom(
                 foregroundColor: Color(0xff2E4D4D),
-                textStyle: TextStyle(fontSize: 10,
-                ),),
+                textStyle: TextStyle(fontSize: 10,),
+                ),
               child: Text("Centro de Ayuda"),),
-                ],)
-          ],),),
+              ],
+              )
+          ],
+          ),
+          ),
         )
       )
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:spotibook2/Pages/TermsYCond.dart';
-import 'package:spotibook2/Pages/Home.dart';
+import 'package:spotibook2/Pages/Suport/TermsYCond.dart';
+import 'package:spotibook2/Pages/Index/Catalogo.dart';
+import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart'; // Asegúrate de importar la página BibliotecaE.dart
 
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Services/firestore_service.dart';
@@ -37,7 +38,7 @@ class _SingUpState extends State<SingUp> {
     });
   }
 
-  //* Validación RFC Empresa(Editorial)
+  //* Validación RFC Empresa(Editorial) 
   bool esRFCDeEmpresa(String rfc) {
     final regex = RegExp(r'^[A-ZÑ&]{3}\d{6}[A-Z0-9]{3}$');
     return regex.hasMatch(rfc.toUpperCase());
@@ -123,8 +124,17 @@ class _SingUpState extends State<SingUp> {
                   final user = await AuthService().registerWithEmailPassword(email, contrasenia);
                   if (user != null) {
                     // Guardar usuario con el tipo de cuenta
-                    await FirestoreService().saveUser(user, username, userType);
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Home()));
+                    if (userType == 'Editorial') {
+                      // Guardar en la colección "editoriales"
+                      await FirestoreService().saveEditorial(user, nombreLegalController.text, rfcController.text, direccionController.text, telefonoController.text);
+                      // Redirigir a la pantalla de Editoriales
+                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => BibliotecaE()));
+                    } else {
+                      // Guardar en la colección "users"
+                      await FirestoreService().saveUser(user, username, userType);
+                      // Redirigir a Catalogo
+                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Catalogo()));
+                    }
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al Registrar")));
                   }

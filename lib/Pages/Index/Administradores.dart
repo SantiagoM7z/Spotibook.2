@@ -1,41 +1,54 @@
 import 'package:flutter/material.dart';
+import 'buscar.dart'; 
 
-class Home extends StatefulWidget {
-  const Home({super.key});
+class Administradores extends StatefulWidget {
+  const Administradores({super.key});
 
   @override
-  State<Home> createState() => _HomeState();
+  State<Administradores> createState() => _AdministradoresState();
 }
 
-class _HomeState extends State<Home> {
-  int _selectedIndex = 0; // Para controlar la pestaña seleccionada
+class _AdministradoresState extends State<Administradores> {
+  int _selectedIndex = 0; 
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index; // Cambia la pestaña seleccionada
-    });
+    if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => Buscar()),
+      );
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: Text("Home",
+        title: Text(
+          "Administradores",
           style: TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.bold,),),
-            backgroundColor: Color(0xff2E4D4D),
-            iconTheme: IconThemeData(color: Colors.white,), 
-            leading: null,),
-            drawer:Drawer(
-              child: ListView(
-              padding: EdgeInsets.zero, // Para quitar el padding predeterminado
-            children: <Widget>[
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Color(0xff2E4D4D),
+        iconTheme: IconThemeData(color: Colors.white),
+        leading: null,
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
             DrawerHeader(
               decoration: BoxDecoration(
                 color: Color(0xff2E4D4D),
               ),
               child: Text(
-                'Menu',
+                'Menú',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -44,34 +57,37 @@ class _HomeState extends State<Home> {
               ),
             ),
             ListTile(
-              title: Text('Plan de Suscripción'),
+              title: Text('Notificaciones'),
               onTap: () {
-                // Aquí puedes agregar la lógica para abrir el apartado de Plan de Suscripción
-                Navigator.pop(context); // Cierra el Drawer
-                print("Plan de Suscripción");
+                Navigator.pop(context);
+                print("Notificaciones");
               },
             ),
             ListTile(
               title: Text('Foros'),
               onTap: () {
-                // Aquí puedes agregar la lógica para abrir los Foros
-                Navigator.pop(context); // Cierra el Drawer
+                Navigator.pop(context);
                 print("Foros");
+              },
+            ),
+            ListTile(
+              title: Text('Biblioteca'),
+              onTap: () {
+                Navigator.pop(context);
+                print("Biblioteca");
               },
             ),
             ListTile(
               title: Text('Configuración'),
               onTap: () {
-                // Aquí puedes agregar la lógica para abrir Configuración
-                Navigator.pop(context); // Cierra el Drawer
+                Navigator.pop(context);
                 print("Configuración");
               },
             ),
             ListTile(
               title: Text('Cerrar sesión'),
               onTap: () {
-                // Aquí puedes agregar la lógica para cerrar sesión
-                Navigator.pop(context); // Cierra el Drawer
+                Navigator.pop(context);
                 print("Cerrar sesión");
               },
             ),
@@ -79,16 +95,16 @@ class _HomeState extends State<Home> {
         ),
       ),
       body: cuerpo(),
-bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        backgroundColor: Color(0xff2E4D4D), //!No esta se esta viendo bien el color verde de fondo
+        backgroundColor: Color(0xff2E4D4D),
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.grey,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Home',
+            label: 'Catalogo',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search),
@@ -96,7 +112,7 @@ bottomNavigationBar: BottomNavigationBar(
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.library_books),
-            label: 'Biblioteca',
+            label: 'joaquin',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -108,15 +124,17 @@ bottomNavigationBar: BottomNavigationBar(
   }
 }
 
-
-Widget cuerpo(){
+Widget cuerpo() {
   return Container(
     decoration: BoxDecoration(
-      image: DecorationImage(image: AssetImage("assets/images/.png"),
-      fit: BoxFit.cover,
-      filterQuality: FilterQuality.high)),
-      child: Center(
-        child: Text("Si"),
+      image: DecorationImage(
+        image: AssetImage("assets/images/.png"), // Cambia la ruta si necesitas otra imagen
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.high,
       ),
+    ),
+    child: Center(
+      child: Text("Administradores"),
+    ),
   );
 }
