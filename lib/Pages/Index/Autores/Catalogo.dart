@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spotibook2/Services/Auth_Service.dart'; // Importa AuthService
+import 'package:spotibook2/Services/Auth_Service.dart';  
 import 'package:spotibook2/Pages/Index/Autores/Buscar.dart';
 import 'package:spotibook2/Pages/Index/Autores/Perfil.dart';
 import 'package:spotibook2/Pages/Index/Autores/Biblioteca.dart';
@@ -13,8 +13,8 @@ class Catalogo extends StatefulWidget {
 }
 
 class _CatalogoState extends State<Catalogo> {
-  int _selectedIndex = 0; // Para controlar la pestaña seleccionada
-  bool isAuthor = false; // Variable para determinar si el usuario es autor o lector
+  int _selectedIndex = 0; 
+  bool isAuthor = false; 
   
   void _onItemTapped(int index) {
     if (index == 1) {
@@ -47,7 +47,7 @@ class _CatalogoState extends State<Catalogo> {
       ),
       drawer: Drawer(
         child: ListView(
-          padding: EdgeInsets.zero, // Para quitar el padding predeterminado
+          padding: EdgeInsets.zero,
           children: <Widget>[
             DrawerHeader(
               decoration: BoxDecoration(
@@ -67,31 +67,30 @@ class _CatalogoState extends State<Catalogo> {
               ListTile(
                 title: Text('Publicar Libro'),
                 onTap: () {
-                  Navigator.pop(context); // Cierra el Drawer
+                  Navigator.pop(context); 
                   print("Publicar Libro");
                 },
               ),
             ],
-            // Si el usuario es lector
             if (!isAuthor) ...[
               ListTile(
                 title: Text('Plan de Suscripción'),
                 onTap: () {
-                  Navigator.pop(context); // Cierra el Drawer
+                  Navigator.pop(context);
                   print("Plan de Suscripción");
                 },
               ),
               ListTile(
                 title: Text('Foros'),
                 onTap: () {
-                  Navigator.pop(context); // Cierra el Drawer
+                  Navigator.pop(context); 
                   print("Foros");
                 },
               ),
               ListTile(
                 title: Text('Biblioteca'),
                 onTap: () {
-                  Navigator.pop(context); // Cierra el Drawer
+                  Navigator.pop(context);
                   print("Biblioteca");
                 },
               ),
@@ -99,17 +98,16 @@ class _CatalogoState extends State<Catalogo> {
             ListTile(
               title: Text('Configuración'),
               onTap: () {
-                Navigator.pop(context); // Cierra el Drawer
+                Navigator.pop(context);
                 print("Configuración");
               },
             ),
-            // Opción de "Cerrar sesión"
             ListTile(
               title: Text('Cerrar sesión'),
               onTap: () async {
-                await AuthService().signOut(); // Cerrar sesión
-                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), // Redirigir al formulario de inicio de sesión
-                (route) => false, // Asegura que la pantalla de inicio de sesión no quede en la pila de navegación
+                await AuthService().signOut(); 
+                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), 
+                (route) => false, 
                 );
               },
             ),
@@ -138,13 +136,13 @@ Widget cuerpo() {
   return Container(
     decoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("assets/images/.png"), // Asegúrate de tener la imagen
+        image: AssetImage("assets/images/.png"),
         fit: BoxFit.cover,
         filterQuality: FilterQuality.high,
       ),
     ),
     child: Center(
-      child: Text("Si"), // Aquí puedes personalizar el contenido de la página
+      child: Text("Si"), 
     ),
   );
 }

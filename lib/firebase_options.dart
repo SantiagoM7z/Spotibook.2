@@ -1,9 +1,8 @@
-import 'package:firebase_core/firebase_core.dart';  // Asegúrate de que esta importación esté correcta
+import 'package:firebase_core/firebase_core.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
-    // Aquí solo devolvemos la configuración para Android
     return android;
   }
 

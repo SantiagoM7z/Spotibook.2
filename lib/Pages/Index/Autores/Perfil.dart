@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:spotibook2/Services/Auth_Service.dart';  // Importa AuthService
+import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Index/Autores/Buscar.dart';
 import 'package:spotibook2/Pages/Index/Autores/Catalogo.dart';
 import 'package:spotibook2/Pages/Index/Autores/Biblioteca.dart';
@@ -24,7 +24,7 @@ class _PerfilState extends State<Perfil> {
   final TextEditingController _correoController = TextEditingController();
   final TextEditingController _contrasenaController = TextEditingController();
 
-  String imageUrl = 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; // Por defecto
+  String imageUrl = 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; 
 
   @override
   void initState() {
@@ -40,7 +40,7 @@ class _PerfilState extends State<Perfil> {
         setState(() {
           _nombreController.text = userDoc['nombre'] ?? '';
           _correoController.text = user.email ?? '';
-          _contrasenaController.text = '********'; // No se muestra directamente
+          _contrasenaController.text = '********'; 
           imageUrl = userDoc['imagen'] ?? imageUrl;
         });
       }
@@ -80,7 +80,7 @@ class _PerfilState extends State<Perfil> {
     // Aquí iría código para subir imagen a Firebase Storage y obtener el URL
     // Por simplicidad se simula
     setState(() {
-      imageUrl = 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; // Cambia a una nueva imagen simulada
+      imageUrl = 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; 
     });
   }
 
@@ -171,13 +171,12 @@ class _PerfilState extends State<Perfil> {
                 print("Configuración");
               },
             ),
-            // Opción de "Cerrar sesión"
             ListTile(
               title: Text('Cerrar sesión'),
               onTap: () async {
-                await AuthService().signOut(); // Cerrar sesión
-                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), // Redirigir al formulario de inicio de sesión
-                (route) => false, // Asegura que la pantalla de inicio de sesión no quede en la pila de navegación
+                await AuthService().signOut(); 
+                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), 
+                (route) => false,
                 );
               },
             ),

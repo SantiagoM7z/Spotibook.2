@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotibook2/Pages/Index/Autores/Catalogo.dart';
 import 'package:spotibook2/Pages/Index/Administradores/Administradores.dart';
-import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart'; // Asegúrate de importar la página BibliotecaE.dart
+import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
 
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Services/firestore_service.dart';
@@ -27,7 +27,7 @@ class _SingInState extends State<SingIn> {
   @override
   void initState() {
     super.initState();
-    _loadRememberMe();  // * Carga el estado de recuerdame
+    _loadRememberMe();
   }
 
   void _loadRememberMe() async {
@@ -36,7 +36,6 @@ class _SingInState extends State<SingIn> {
       isRememberMeChecked = prefs.getBool('rememberMe') ?? false;
       if (isRememberMeChecked) {
         correoController.text = prefs.getString('email') ?? '';
-        contraseniaController.text = prefs.getString('password') ?? '';
       }
     });
   }
@@ -46,10 +45,8 @@ class _SingInState extends State<SingIn> {
     prefs.setBool('rememberMe', value);
     if (value) {
       prefs.setString('email', correoController.text);
-      prefs.setString('password', contraseniaController.text);
     } else {
       prefs.remove('email');
-      prefs.remove('password');
     }
   }
 
@@ -119,16 +116,13 @@ class _SingInState extends State<SingIn> {
                         try {
                           final user = await AuthService().signInWithEmail(email, password);
                           if (user != null) {
-                            // Obtener el username desde Firestore
                             final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
                             final username = userDoc['username'] ?? 'Usuario';
                             
-                            // Mostrar mensaje de bienvenida
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text("Bienvenido $username")),
                             );
 
-                            // Verificar el tipo de usuario desde Firestore en la colección 'users'
                             final userType = await FirestoreService().getUserType(user.uid);
                             if (userType == "Admin") {
                               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Administradores()));
@@ -139,7 +133,6 @@ class _SingInState extends State<SingIn> {
                             }
                           }
                         } catch (e) {
-                          // Si no se encuentra el usuario, mostrar el mensaje
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Usuario no encontrado")));
                         }
                       }
@@ -172,7 +165,7 @@ class _SingInState extends State<SingIn> {
       child: TextFormField(
         controller: controller,
         keyboardType: tipo,
-        obscureText: obscure,  // Solo en el campo de contraseña, el texto será ocultado
+        obscureText: obscure,
         decoration: InputDecoration(
           hintText: hint,
           fillColor: Colors.white,

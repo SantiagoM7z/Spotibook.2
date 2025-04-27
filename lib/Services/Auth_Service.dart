@@ -32,12 +32,11 @@ class AuthService {
     }
   }
 
-  // Método para obtener el tipo de usuario desde la colección "users"
   Future<String?> getUserTypeFromUsers(String uid) async {
     try {
       final DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (userDoc.exists) {
-        return userDoc['userType'];  // Asumiendo que el campo 'userType' existe en la colección "users"
+        return userDoc['userType'];
       }
       return null;
     } catch (e) {

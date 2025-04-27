@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:spotibook2/Pages/Suport/TermsYCond.dart';
 import 'package:spotibook2/Pages/Index/Autores/Catalogo.dart';
-import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart'; // Asegúrate de importar la página BibliotecaE.dart
+import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
 
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Services/firestore_service.dart';
@@ -119,20 +119,15 @@ class _SingUpState extends State<SingUp> {
                   final email = correoController.text;
                   final username = nombreController.text;
                   final contrasenia = contraseniaController.text;
-                  final userType = widget.UserType;  // Obtener el tipo de usuario
+                  final userType = widget.UserType; 
 
                   final user = await AuthService().registerWithEmailPassword(email, contrasenia);
                   if (user != null) {
-                    // Guardar usuario con el tipo de cuenta
                     if (userType == 'Editorial') {
-                      // Guardar en la colección "editoriales"
                       await FirestoreService().saveEditorial(user, nombreLegalController.text, rfcController.text, direccionController.text, telefonoController.text, username); // Agregar el username
-                      // Redirigir a la pantalla de Editoriales
                       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => BibliotecaE()));
                     } else {
-                      // Guardar en la colección "users"
                       await FirestoreService().saveUser(user, username, userType);
-                      // Redirigir a Catalogo
                       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Catalogo()));
                     }
                   } else {

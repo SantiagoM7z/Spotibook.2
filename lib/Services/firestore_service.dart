@@ -30,7 +30,7 @@ class FirestoreService {
         'rfc': rfc,
         'direccion': direccion,
         'telefono': telefono,
-        'username': username,  // Agregar el campo 'username'
+        'username': username,
         'userType': 'Editorial',
       };
 

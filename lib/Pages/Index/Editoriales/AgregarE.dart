@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spotibook2/Pages/Index/Autores/Biblioteca.dart';
-import 'package:spotibook2/Services/Auth_Service.dart'; // Importa AuthService
+import 'package:spotibook2/Services/Auth_Service.dart'; 
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 
 class AgregarE extends StatefulWidget {
@@ -165,9 +165,9 @@ class _AgregarEState extends State<AgregarE> {
             ListTile(
               title: Text('Cerrar sesión'),
               onTap: () async {
-                await AuthService().signOut(); // Cerrar sesión
-                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), // Redirigir al formulario de inicio de sesión
-                (route) => false, // Asegura que la pantalla de inicio de sesión no quede en la pila de navegación
+                await AuthService().signOut(); 
+                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()),
+                (route) => false,
                 );
               },
             ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spotibook2/Services/Auth_Service.dart'; // Importa AuthService
+import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Index/Autores/Perfil.dart';
 import 'package:spotibook2/Pages/Index/Autores/Catalogo.dart';
 import 'package:spotibook2/Pages/Index/Autores/Biblioteca.dart';
@@ -24,12 +24,12 @@ class _BuscarState extends State<Buscar> {
   ];
   List<String> resultados = [];
 
-  int _selectedIndex = 1; // Buscar está en el índice 1
+  int _selectedIndex = 1;
 
   @override
   void initState() {
     super.initState();
-    resultados = libros; // Mostrar todos al inicio
+    resultados = libros;
   }
 
   void _buscar(String query) {
@@ -94,9 +94,9 @@ class _BuscarState extends State<Buscar> {
             ListTile(
               title: Text('Cerrar sesión'),
               onTap: () async {
-                await AuthService().signOut(); // Cerrar sesión
-                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), // Redirigir al formulario de inicio de sesión
-                (route) => false, // Asegura que la pantalla de inicio de sesión no quede en la pila de navegación
+                await AuthService().signOut(); 
+                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()),
+                (route) => false, 
                 );
               },
             ),
