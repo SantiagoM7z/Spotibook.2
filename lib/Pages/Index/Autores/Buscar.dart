@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'Perfil.dart';
-import 'Catalogo.dart';
-import 'Biblioteca.dart';
-
-
+import 'package:spotibook2/Services/Auth_Service.dart'; // Importa AuthService
+import 'package:spotibook2/Pages/Index/Autores/Perfil.dart';
+import 'package:spotibook2/Pages/Index/Autores/Catalogo.dart';
+import 'package:spotibook2/Pages/Index/Autores/Biblioteca.dart';
+import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 
 class Buscar extends StatefulWidget {
   const Buscar({super.key});
@@ -41,19 +41,19 @@ class _BuscarState extends State<Buscar> {
     });
   }
 
-void _onItemTapped(int index) {
-  if (index == 0) {
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => Catalogo()));
-  } else if (index == 2) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => Biblioteca()));
-  } else if (index == 3) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => Perfil()));
-  }
+  void _onItemTapped(int index) {
+    if (index == 0) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => Catalogo()));
+    } else if (index == 2) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => Biblioteca()));
+    } else if (index == 3) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => Perfil()));
+    }
 
-  setState(() {
-    _selectedIndex = index;
-  });
-}
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +79,29 @@ void _onItemTapped(int index) {
             title: Text(resultados[index]),
           );
         },
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xff2E4D4D)),
+              child: Text(
+                'Menú',
+                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              title: Text('Cerrar sesión'),
+              onTap: () async {
+                await AuthService().signOut(); // Cerrar sesión
+                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), // Redirigir al formulario de inicio de sesión
+                (route) => false, // Asegura que la pantalla de inicio de sesión no quede en la pila de navegación
+                );
+              },
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

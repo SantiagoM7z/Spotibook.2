@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'buscar.dart'; 
+import 'package:spotibook2/Pages/Index/Autores/Buscar.dart'; 
+import 'package:spotibook2/Pages/Inicio/SingIn.dart';
+import 'package:spotibook2/Services/Auth_Service.dart'; // Importa AuthService
 
 class Administradores extends StatefulWidget {
   const Administradores({super.key});
@@ -9,7 +11,7 @@ class Administradores extends StatefulWidget {
 }
 
 class _AdministradoresState extends State<Administradores> {
-  int _selectedIndex = 0; 
+  int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
     if (index == 1) {
@@ -84,11 +86,14 @@ class _AdministradoresState extends State<Administradores> {
                 print("Configuración");
               },
             ),
+            // Opción de "Cerrar sesión"
             ListTile(
               title: Text('Cerrar sesión'),
-              onTap: () {
-                Navigator.pop(context);
-                print("Cerrar sesión");
+              onTap: () async {
+                await AuthService().signOut(); // Cerrar sesión
+                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), // Redirigir al formulario de inicio de sesión
+                (route) => false, // Asegura que la pantalla de inicio de sesión no quede en la pila de navegación
+                );
               },
             ),
           ],
@@ -128,7 +133,7 @@ Widget cuerpo() {
   return Container(
     decoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("assets/images/.png"), // Cambia la ruta si necesitas otra imagen
+        image: AssetImage("assets/images/.png"), // Asegúrate de tener la imagen
         fit: BoxFit.cover,
         filterQuality: FilterQuality.high,
       ),

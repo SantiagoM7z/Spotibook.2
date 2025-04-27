@@ -12,7 +12,9 @@ class HelpCenter extends StatelessWidget {
             color: Colors.white,
             fontWeight: FontWeight.bold,),),
             backgroundColor: Color(0xff2E4D4D),
-            iconTheme: IconThemeData(color: Colors.white,),),
+            iconTheme: IconThemeData(color: Colors.white,),
+            automaticallyImplyLeading: false,
+          ),
     );
   }
 }

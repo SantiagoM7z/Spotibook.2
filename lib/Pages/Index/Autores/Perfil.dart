@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'Buscar.dart';
-import 'Catalogo.dart';
-import 'Biblioteca.dart';
+import 'package:spotibook2/Services/Auth_Service.dart';  // Importa AuthService
+import 'package:spotibook2/Pages/Index/Autores/Buscar.dart';
+import 'package:spotibook2/Pages/Index/Autores/Catalogo.dart';
+import 'package:spotibook2/Pages/Index/Autores/Biblioteca.dart';
+import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 
 class Perfil extends StatefulWidget {
   const Perfil({super.key});
@@ -60,19 +62,20 @@ class _PerfilState extends State<Perfil> {
     }
   }
 
- void _onItemTapped(int index) {
-  if (index == 0) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => Catalogo()));
-  } else if (index == 2) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => Buscar()));
-  } else if (index == 3) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => Biblioteca()));
-  } else {
-    setState(() {
-      _selectedIndex = index;
-    });
+  void _onItemTapped(int index) {
+    if (index == 0) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => Catalogo()));
+    } else if (index == 2) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => Buscar()));
+    } else if (index == 3) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => Biblioteca()));
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
   }
-}
+
   Future<void> _seleccionarImagen() async {
     // Aquí iría código para subir imagen a Firebase Storage y obtener el URL
     // Por simplicidad se simula
@@ -125,6 +128,58 @@ class _PerfilState extends State<Perfil> {
                 padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
               ),
               child: Text("Guardar Cambios", style: TextStyle(fontSize: 16,)),
+            ),
+          ],
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xff2E4D4D)),
+              child: Text(
+                'Menú',
+                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              title: Text('Notificaciones'),
+              onTap: () {
+                Navigator.pop(context);
+                print("Notificaciones");
+              },
+            ),
+            ListTile(
+              title: Text('Foros'),
+              onTap: () {
+                Navigator.pop(context);
+                print("Foros");
+              },
+            ),
+            ListTile(
+              title: Text('Biblioteca'),
+              onTap: () {
+                Navigator.pop(context);
+                print("Biblioteca");
+              },
+            ),
+            ListTile(
+              title: Text('Configuración'),
+              onTap: () {
+                Navigator.pop(context);
+                print("Configuración");
+              },
+            ),
+            // Opción de "Cerrar sesión"
+            ListTile(
+              title: Text('Cerrar sesión'),
+              onTap: () async {
+                await AuthService().signOut(); // Cerrar sesión
+                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), // Redirigir al formulario de inicio de sesión
+                (route) => false, // Asegura que la pantalla de inicio de sesión no quede en la pila de navegación
+                );
+              },
             ),
           ],
         ),

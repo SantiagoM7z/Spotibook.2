@@ -21,7 +21,7 @@ class FirestoreService {
   }
 
   // * Guardar la información de la editorial en Firestore
-  Future<void> saveEditorial(User user, String nombreLegal, String rfc, String direccion, String telefono) async {
+  Future<void> saveEditorial(User user, String nombreLegal, String rfc, String direccion, String telefono, String username) async {
     try {
       Map<String, dynamic> editorialModel = {
         'uid': user.uid,
@@ -30,6 +30,7 @@ class FirestoreService {
         'rfc': rfc,
         'direccion': direccion,
         'telefono': telefono,
+        'username': username,  // Agregar el campo 'username'
         'userType': 'Editorial',
       };
 

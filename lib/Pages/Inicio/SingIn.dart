@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; 
-import 'package:spotibook2/Pages/Index/Catalogo.dart';
-import 'package:spotibook2/Pages/Index/Administradores.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:spotibook2/Pages/Index/Autores/Catalogo.dart';
+import 'package:spotibook2/Pages/Index/Administradores/Administradores.dart';
+import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart'; // Asegúrate de importar la página BibliotecaE.dart
+
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Services/firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SingIn extends StatefulWidget {
   const SingIn({super.key});
@@ -15,7 +18,7 @@ class SingIn extends StatefulWidget {
 class _SingInState extends State<SingIn> {
   final _formKey = GlobalKey<FormState>();
 
-  TextEditingController correoORnombreController = TextEditingController();
+  TextEditingController correoController = TextEditingController();
   TextEditingController contraseniaController = TextEditingController();
 
   bool isFormValid = false;
@@ -32,7 +35,7 @@ class _SingInState extends State<SingIn> {
     setState(() {
       isRememberMeChecked = prefs.getBool('rememberMe') ?? false;
       if (isRememberMeChecked) {
-        correoORnombreController.text = prefs.getString('email') ?? '';
+        correoController.text = prefs.getString('email') ?? '';
         contraseniaController.text = prefs.getString('password') ?? '';
       }
     });
@@ -42,7 +45,7 @@ class _SingInState extends State<SingIn> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setBool('rememberMe', value);
     if (value) {
-      prefs.setString('email', correoORnombreController.text);
+      prefs.setString('email', correoController.text);
       prefs.setString('password', contraseniaController.text);
     } else {
       prefs.remove('email');
@@ -66,6 +69,7 @@ class _SingInState extends State<SingIn> {
         ),
         backgroundColor: const Color(0xff2E4D4D),
         iconTheme: const IconThemeData(color: Colors.white),
+        automaticallyImplyLeading: false,
       ),
       body: Form(
         key: _formKey,
@@ -89,7 +93,7 @@ class _SingInState extends State<SingIn> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              _correoORnombre(),
+              _correo(),
               _contrasenia(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -109,22 +113,34 @@ class _SingInState extends State<SingIn> {
               ElevatedButton(
                 onPressed: isFormValid
                     ? () async {
-                        final emailOrUsername = correoORnombreController.text;
+                        final email = correoController.text;
                         final password = contraseniaController.text;
 
                         try {
-                          final user = await AuthService().signInWithEmailOrUsername(emailOrUsername, password);
+                          final user = await AuthService().signInWithEmail(email, password);
                           if (user != null) {
+                            // Obtener el username desde Firestore
+                            final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+                            final username = userDoc['username'] ?? 'Usuario';
+                            
+                            // Mostrar mensaje de bienvenida
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Bienvenido $username")),
+                            );
+
                             // Verificar el tipo de usuario desde Firestore en la colección 'users'
                             final userType = await FirestoreService().getUserType(user.uid);
                             if (userType == "Admin") {
                               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Administradores()));
-                            } else {
+                            } else if (userType == "Lector" || userType == "Autor"){
                               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Catalogo()));
+                            } else {
+                              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => BibliotecaE()));
                             }
                           }
                         } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al iniciar sesión: $e")));
+                          // Si no se encuentra el usuario, mostrar el mensaje
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Usuario no encontrado")));
                         }
                       }
                     : null,
@@ -140,8 +156,8 @@ class _SingInState extends State<SingIn> {
     );
   }
 
-  Widget _correoORnombre() => _campoTexto("Correo o Nombre de Usuario", correoORnombreController, TextInputType.emailAddress, true, validator: (value) {
-    if (value == null || value.isEmpty) return "El correo o Nombre de Usuario es obligatorio";
+  Widget _correo() => _campoTexto("Correo", correoController, TextInputType.emailAddress, true, validator: (value) {
+    if (value == null || value.isEmpty) return "El correo es obligatorio";
     return null;
   });
 

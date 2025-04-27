@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'Buscar.dart';
-import 'Perfil.dart';
-import 'Biblioteca.dart';
+import 'package:spotibook2/Services/Auth_Service.dart'; // Importa AuthService
+import 'package:spotibook2/Pages/Index/Autores/Buscar.dart';
+import 'package:spotibook2/Pages/Index/Autores/Perfil.dart';
+import 'package:spotibook2/Pages/Index/Autores/Biblioteca.dart';
+import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 
 class Catalogo extends StatefulWidget {
   const Catalogo({super.key});
@@ -14,19 +16,19 @@ class _CatalogoState extends State<Catalogo> {
   int _selectedIndex = 0; // Para controlar la pestaña seleccionada
   bool isAuthor = false; // Variable para determinar si el usuario es autor o lector
   
-void _onItemTapped(int index) {
-  if (index == 1) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => Buscar()));
-  } else if (index == 2) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => Biblioteca()));
-  } else if (index == 3) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => Perfil()));
-  } else {
-    setState(() {
-      _selectedIndex = index;
-    });
+  void _onItemTapped(int index) {
+    if (index == 1) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => Buscar()));
+    } else if (index == 2) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => Biblioteca()));
+    } else if (index == 3) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => Perfil()));
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -101,11 +103,14 @@ void _onItemTapped(int index) {
                 print("Configuración");
               },
             ),
+            // Opción de "Cerrar sesión"
             ListTile(
               title: Text('Cerrar sesión'),
-              onTap: () {
-                Navigator.pop(context); // Cierra el Drawer
-                print("Cerrar sesión");
+              onTap: () async {
+                await AuthService().signOut(); // Cerrar sesión
+                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), // Redirigir al formulario de inicio de sesión
+                (route) => false, // Asegura que la pantalla de inicio de sesión no quede en la pila de navegación
+                );
               },
             ),
           ],
@@ -119,10 +124,10 @@ void _onItemTapped(int index) {
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.grey,
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home),label: 'Catalogo',),
-          BottomNavigationBarItem(icon: Icon(Icons.search),label: 'Buscar',),
-          BottomNavigationBarItem(icon: Icon(Icons.library_books),label: 'Biblioteca',),
-          BottomNavigationBarItem(icon: Icon(Icons.person),label: 'Perfil',),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catalogo',),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar',),
+          BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Biblioteca',),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil',),
         ],
       ),
     );
@@ -139,7 +144,7 @@ Widget cuerpo() {
       ),
     ),
     child: Center(
-      child: Text("Si"),
+      child: Text("Si"), // Aquí puedes personalizar el contenido de la página
     ),
   );
 }

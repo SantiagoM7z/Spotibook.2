@@ -18,25 +18,8 @@ class AuthService {
     }
   }
 
-  // * Inicio de sesión
-  Future<User?> signInWithEmailOrUsername(String signInWithEmailOrUsername, String password) async {
-    try {
-      User? user;
-
-      if (signInWithEmailOrUsername.contains('@')) {
-        user = await _signInWithEmail(signInWithEmailOrUsername, password);
-      } else {
-        user = await _signInWithUsername(signInWithEmailOrUsername, password);
-      }
-
-      return user;
-    } catch (e) {
-      print("Error al Iniciar Sesión: $e");
-      return null;
-    }
-  }
-
-  Future<User?> _signInWithEmail(String email, String password) async {
+  // * Inicio de sesión (solo con email)
+  Future<User?> signInWithEmail(String email, String password) async {
     try {
       final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
@@ -45,25 +28,8 @@ class AuthService {
       return userCredential.user;
     } catch (e) {
       print("Error al Iniciar Sesión con Correo: $e");
-      return null;
+      throw Exception('Usuario no encontrado');
     }
-  }
-
-  Future<User?> _signInWithUsername(String username, String password) async {
-    try {
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('username', isEqualTo: username)
-          .get();
-
-      if (snapshot.docs.isNotEmpty) {
-        final String email = snapshot.docs.first['email'];
-        return await _signInWithEmail(email, password);
-      }
-    } catch (e) {
-      print("Error al Iniciar Sesión con Nombre de Usuario: $e");
-    }
-    return null;
   }
 
   // Método para obtener el tipo de usuario desde la colección "users"
@@ -76,20 +42,6 @@ class AuthService {
       return null;
     } catch (e) {
       print("Error al obtener tipo de usuario desde 'users': $e");
-      return null;
-    }
-  }
-
-  // Método para obtener el tipo de usuario desde la colección "editoriales"
-  Future<String?> getUserTypeFromEditoriales(String uid) async {
-    try {
-      final DocumentSnapshot editorialDoc = await FirebaseFirestore.instance.collection('editoriales').doc(uid).get();
-      if (editorialDoc.exists) {
-        return "Editorial";  // Si el usuario está en la colección 'editoriales', lo clasificamos como Editorial
-      }
-      return null;
-    } catch (e) {
-      print("Error al obtener tipo de usuario desde 'editoriales': $e");
       return null;
     }
   }

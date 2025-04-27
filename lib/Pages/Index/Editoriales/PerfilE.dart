@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:spotibook2/Services/Auth_Service.dart';  // Importa AuthService
 import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
 import 'package:spotibook2/Pages/Index/Editoriales/AgregarE.dart';
+import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 
 class PerfilE extends StatefulWidget {
   const PerfilE({super.key});
@@ -32,10 +34,10 @@ class _PerfilEState extends State<PerfilE> {
   void _cargarDatosUsuario() async {
     final user = _auth.currentUser;
     if (user != null) {
-      DocumentSnapshot userDoc = await _firestore.collection('usuarios').doc(user.uid).get();
+      DocumentSnapshot userDoc = await _firestore.collection('editoriales').doc(user.uid).get();
       if (userDoc.exists) {
         setState(() {
-          _nombreController.text = userDoc['nombre'] ?? '';
+          _nombreController.text = userDoc['nombreLegal'] ?? '';  // Cargar el nombre legal de la editorial
           _correoController.text = user.email ?? '';
           _contrasenaController.text = '********'; // No se muestra directamente
           imageUrl = userDoc['imagen'] ?? imageUrl;
@@ -47,8 +49,8 @@ class _PerfilEState extends State<PerfilE> {
   void _guardarCambios() async {
     final user = _auth.currentUser;
     if (user != null) {
-      await _firestore.collection('usuarios').doc(user.uid).set({
-        'nombre': _nombreController.text,
+      await _firestore.collection('editoriales').doc(user.uid).set({
+        'nombreLegal': _nombreController.text,
         'imagen': imageUrl,
         'correo': _correoController.text,
       }, SetOptions(merge: true));
@@ -85,7 +87,7 @@ class _PerfilEState extends State<PerfilE> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Perfil"),
+        title: Text("Perfil Editorial"),
         backgroundColor: Color(0xff2E4D4D),
       ),
       body: Padding(
@@ -105,7 +107,7 @@ class _PerfilEState extends State<PerfilE> {
             SizedBox(height: 20),
             TextField(
               controller: _nombreController,
-              decoration: InputDecoration(labelText: "Nombre de Usuario"),
+              decoration: InputDecoration(labelText: "Nombre Legal de la Editorial"),
             ),
             TextField(
               controller: _correoController,
@@ -125,6 +127,58 @@ class _PerfilEState extends State<PerfilE> {
                 padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
               ),
               child: Text("Guardar Cambios", style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xff2E4D4D)),
+              child: Text(
+                'Menú',
+                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              title: Text('Notificaciones'),
+              onTap: () {
+                Navigator.pop(context);
+                print("Notificaciones");
+              },
+            ),
+            ListTile(
+              title: Text('Foros'),
+              onTap: () {
+                Navigator.pop(context);
+                print("Foros");
+              },
+            ),
+            ListTile(
+              title: Text('Biblioteca'),
+              onTap: () {
+                Navigator.pop(context);
+                print("Biblioteca");
+              },
+            ),
+            ListTile(
+              title: Text('Configuración'),
+              onTap: () {
+                Navigator.pop(context);
+                print("Configuración");
+              },
+            ),
+            // Opción de "Cerrar sesión"
+            ListTile(
+              title: Text('Cerrar sesión'),
+              onTap: () async {
+                await AuthService().signOut(); // Cerrar sesión
+                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), // Redirigir al formulario de inicio de sesión
+                (route) => false, // Asegura que la pantalla de inicio de sesión no quede en la pila de navegación
+                );
+              },
             ),
           ],
         ),

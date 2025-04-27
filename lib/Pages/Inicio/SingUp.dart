@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spotibook2/Pages/Suport/TermsYCond.dart';
-import 'package:spotibook2/Pages/Index/Catalogo.dart';
+import 'package:spotibook2/Pages/Index/Autores/Catalogo.dart';
 import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart'; // Asegúrate de importar la página BibliotecaE.dart
 
 import 'package:spotibook2/Services/Auth_Service.dart';
@@ -54,6 +54,7 @@ class _SingUpState extends State<SingUp> {
         ),
         backgroundColor: const Color(0xff2E4D4D),
         iconTheme: const IconThemeData(color: Colors.white),
+        automaticallyImplyLeading: false,
       ),
       body: Form(
         key: _formKey,
@@ -103,8 +104,7 @@ class _SingUpState extends State<SingUp> {
                   const Text("Acepto los"),
                   TextButton(
                     onPressed: () {
-                      Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => TermsYCond()));
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => TermsYCond()));
                     },
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xff2E4D4D),
@@ -126,7 +126,7 @@ class _SingUpState extends State<SingUp> {
                     // Guardar usuario con el tipo de cuenta
                     if (userType == 'Editorial') {
                       // Guardar en la colección "editoriales"
-                      await FirestoreService().saveEditorial(user, nombreLegalController.text, rfcController.text, direccionController.text, telefonoController.text);
+                      await FirestoreService().saveEditorial(user, nombreLegalController.text, rfcController.text, direccionController.text, telefonoController.text, username); // Agregar el username
                       // Redirigir a la pantalla de Editoriales
                       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => BibliotecaE()));
                     } else {

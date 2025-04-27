@@ -7,11 +7,18 @@ import 'package:spotibook2/Pages/Suport/HelpCenter.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Pages/Suport/TermsYCond.dart';
 
+import 'package:spotibook2/Services/Auth_Service.dart';  // Importa el servicio de autenticación
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'package:spotibook2/Pages/Index/Administradores/Administradores.dart';
+import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
+import 'package:spotibook2/Pages/Index/Autores/Catalogo.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();  // Asegúrate de que Flutter esté inicializado
   await Firebase.initializeApp(
-  options: DefaultFirebaseOptions.currentPlatform,
-);
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(Spotibook());
 }
@@ -23,88 +30,121 @@ class Spotibook extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Builder(builder:(context)=>Scaffold(
-        body: Center(
-          child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: <Widget>[
-              Text("BIENVENIDO", textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily:"Lora",
-                color: Colors.black,
-                fontSize: 30,
-                fontWeight: FontWeight.bold),
+      home: FutureBuilder(
+        future: _checkIfUserIsLoggedIn(), // Verificamos si el usuario ya está autenticado
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator()); // Esperamos la respuesta de Firebase
+          } else if (snapshot.hasData && snapshot.data != null) {
+            // Si el usuario está autenticado, redirigimos a la página correspondiente
+            final user = snapshot.data;
+            return _redirectToHomePage(user!); // Redirigir a la página adecuada
+          } else {
+            // Si no hay sesión activa, mostramos la pantalla de inicio con los botones
+            return Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text("BIENVENIDO", textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily:"Lora",
+                        color: Colors.black,
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold),
+                    ),
+                    Text("SpotiBook", textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily:"Lora",
+                        color: Colors.black,
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(context,
+                          MaterialPageRoute(builder: (context)=>SingIn()));
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xff2E4D4D),
+                        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15)
+                      ),
+                      child: Text("Iniciar Sesión", style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.white),
+                      ),
+                    ),
+                    TextButton(onPressed: () {
+                      Navigator.push(context,
+                        MaterialPageRoute(builder: (context)=>AccountType())
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Color(0xff2E4D4D),
+                      textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    child: Text("Registrarse"),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        TextButton(onPressed: () {
+                          Navigator.push(context,
+                            MaterialPageRoute(builder: (context)=>TermsYCond())
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Color(0xff2E4D4D),
+                          textStyle: TextStyle(fontSize: 10),
+                        ),
+                        child: Text("Terminos y Condiciones"),),
+                        TextButton(onPressed: () {
+                          Navigator.push(context,
+                            MaterialPageRoute(builder: (context)=>HelpCenter())
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Color(0xff2E4D4D),
+                          textStyle: TextStyle(fontSize: 10),
+                        ),
+                        child: Text("Centro de Ayuda"),),
+                      ],
+                    )
+                  ],
                 ),
-              
-
-              Text("SpotiBook", textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily:"Lora",
-                color: Colors.black,
-                fontSize: 30,
-                fontWeight: FontWeight.bold),
-                ),
-
-              ElevatedButton(onPressed: () {
-                Navigator.push(context,
-                  MaterialPageRoute(builder: (context)=>SingIn()
-                  )
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xff2E4D4D),
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15)
-                ),
-                child: Text("Iniciar Sesión", style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white),
-                  ),
-                ),
-
-              TextButton(onPressed: () {
-                Navigator.push(context,
-                  MaterialPageRoute(builder: (context)=>AccountType())
-                  );
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Color(0xff2E4D4D),
-                textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              child: Text("Registrarse"),
-              ),
+            );
+          }
+        },
+      ),
+    );
+  }
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                TextButton(onPressed: () {
-                  Navigator.push(context,
-                    MaterialPageRoute(builder: (context)=>TermsYCond())
-                    );
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Color(0xff2E4D4D),
-                  textStyle: TextStyle(fontSize: 10,
-                  ),),
-              child: Text("Terminos y Condiciones"),),
-              TextButton(onPressed: () {
-                Navigator.push(context,
-                  MaterialPageRoute(builder: (context)=>HelpCenter())
-                  );
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Color(0xff2E4D4D),
-                textStyle: TextStyle(fontSize: 10,),
-                ),
-              child: Text("Centro de Ayuda"),),
-              ],
-              )
-          ],
-          ),
-          ),
-        )
-      )
+  Future<User?> _checkIfUserIsLoggedIn() async {
+    final user = await AuthService().getCurrentUser();
+    if (user != null) {
+      final userType = await AuthService().getUserTypeFromUsers(user.uid);  // Verificar tipo de usuario
+      return userType != null ? user : null;
+    }
+    return null; // Si no hay sesión activa
+  }
+
+  Widget _redirectToHomePage(User user) {
+    return FutureBuilder<String?>(
+      future: AuthService().getUserTypeFromUsers(user.uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.data == "Admin") {
+          return Administradores(); // Redirigir al Administrador
+        } else if (snapshot.data == "Lector" || snapshot.data == "Autor") {
+          return Catalogo(); // Redirigir a Catalogo
+        } else {
+          return BibliotecaE(); // Redirigir a Biblioteca para editorial
+        }
+      },
     );
   }
 }

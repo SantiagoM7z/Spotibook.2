@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'catalogo.dart';
-import 'buscar.dart';
-import 'Perfil.dart';
+import 'package:spotibook2/Services/Auth_Service.dart'; // Importa AuthService
+import 'package:spotibook2/Pages/Index/Autores/Catalogo.dart';
+import 'package:spotibook2/Pages/Index/Autores/Buscar.dart';
+import 'package:spotibook2/Pages/Index/Autores/Perfil.dart';
+import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 
 class Biblioteca extends StatefulWidget {
   const Biblioteca({super.key});
@@ -81,13 +83,36 @@ class _BibliotecaState extends State<Biblioteca> {
           ),
         ],
       ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xff2E4D4D)),
+              child: Text(
+                'Menú',
+                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              title: Text('Cerrar sesión'),
+              onTap: () async {
+                await AuthService().signOut(); // Cerrar sesión
+                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), // Redirigir al formulario de inicio de sesión
+                (route) => false, // Asegura que la pantalla de inicio de sesión no quede en la pila de navegación
+                );
+              },
+            ),
+          ],
+        ),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         backgroundColor: Color(0xff2E4D4D),
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.grey,
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Catalogo',
