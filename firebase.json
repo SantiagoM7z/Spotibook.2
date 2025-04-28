@@ -1,1 +1,38 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"spotibook-736fe","appId":"1:1090105547909:android:1c58120fd991ecc8189dec","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"spotibook-736fe","configurations":{"android":"1:1090105547909:android:1c58120fd991ecc8189dec","ios":"1:1090105547909:ios:02564f5025eec230189dec","macos":"1:1090105547909:ios:02564f5025eec230189dec","web":"1:1090105547909:web:0c8c9664f8d911f8189dec","windows":"1:1090105547909:web:598164edbe8bb5b7189dec"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "spotibook-736fe",
+          "appId": "1:1090105547909:android:1c58120fd991ecc8189dec",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "spotibook-736fe",
+          "configurations": {
+            "android": "1:1090105547909:android:1c58120fd991ecc8189dec",
+            "ios": "1:1090105547909:ios:02564f5025eec230189dec",
+            "macos": "1:1090105547909:ios:02564f5025eec230189dec",
+            "web": "1:1090105547909:web:0c8c9664f8d911f8189dec",
+            "windows": "1:1090105547909:web:598164edbe8bb5b7189dec"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}
