@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:spotibook2/Pages/Index/Autores/Buscar.dart'; 
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
 
@@ -15,7 +14,6 @@ class _AdministradoresState extends State<Administradores> {
 
   void _onItemTapped(int index) {
     if (index == 1) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => Buscar()),);
     } else {
       setState(() {
         _selectedIndex = index;

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spotibook2/Pages/Index/Autores/Biblioteca.dart';
+import 'package:spotibook2/Pages/Index/Lectores/Biblioteca.dart';
 import 'package:spotibook2/Services/Auth_Service.dart'; 
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 

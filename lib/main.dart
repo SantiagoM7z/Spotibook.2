@@ -12,7 +12,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:spotibook2/Pages/Index/Administradores/Administradores.dart';
 import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
-import 'package:spotibook2/Pages/Index/Autores/Catalogo.dart';
+import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
