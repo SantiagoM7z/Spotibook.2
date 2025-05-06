@@ -110,7 +110,7 @@ class _BibliotecaState extends State<Biblioteca> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         backgroundColor: Color(0xff2E4D4D),
-        selectedItemColor: Colors.white,
+        selectedItemColor: Color(0xff2E4D4D),
         unselectedItemColor: Colors.grey,
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(

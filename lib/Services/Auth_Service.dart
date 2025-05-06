@@ -32,6 +32,23 @@ class AuthService {
     }
   }
 
+  // * Función para restablecer la contraseña
+  Future<void> resetPassword(String email, String newPassword) async {
+    try {
+      // Realizar el restablecimiento de la contraseña con Firebase Authentication
+      User? user = FirebaseAuth.instance.currentUser;
+
+      // Si el usuario está autenticado, podemos proceder a cambiar la contraseña
+      if (user != null) {
+        await user.updatePassword(newPassword);  // Cambiar la contraseña
+      } else {
+        throw Exception("Usuario no autenticado");
+      }
+    } catch (error) {
+      throw Exception("Error al restablecer la contraseña: $error");
+    }
+  }
+
   Future<String?> getUserTypeFromUsers(String uid) async {
     try {
       final DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();

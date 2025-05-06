@@ -7,6 +7,8 @@ import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Services/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:spotibook2/Services/RecoverPassService.dart';
+import 'package:uuid/uuid.dart';
 
 class SingIn extends StatefulWidget {
   const SingIn({super.key});
@@ -56,6 +58,28 @@ class _SingInState extends State<SingIn> {
     });
   }
 
+  // Función para enviar el correo de recuperación
+  Future<void> _sendRecoveryEmail() async {
+    final email = correoController.text;
+    if (email.isNotEmpty) {
+      try {
+        // Generar un token único para esta solicitud
+        final token = Uuid().v4();  // Genera un token único aleatorio
+        // Ahora generamos el enlace con el token
+        final resetUrl = RecoverPassService().generarResetUrl(token);
+        // Envía el correo con el enlace de restablecimiento
+        await RecoverPassService().enviarCorreoRecuperacion(
+          destinatario: email,
+          username: 'User', // Este debe ser el nombre real del usuario
+          resetUrl: resetUrl,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Correo de recuperación enviado")));
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hubo un error al enviar el correo")));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,6 +116,20 @@ class _SingInState extends State<SingIn> {
             children: <Widget>[
               _correo(),
               _contrasenia(),
+              // Aquí se agrega el TextButton para recuperar la contraseña
+              Padding(
+                padding: const EdgeInsets.only(top: 20.0),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _sendRecoveryEmail,
+                    child: const Text(
+                      "Olvidé mi contraseña",
+                      style: TextStyle(color: Color(0xff2E4D4D)),
+                    ),
+                  ),
+                ),
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
