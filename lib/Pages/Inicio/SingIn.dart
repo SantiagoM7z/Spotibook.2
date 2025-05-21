@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
-import 'package:spotibook2/Pages/Index/Administradores/Administradores.dart';
+import 'package:spotibook2/Pages/Index/Administradores/Verificaciones.dart';
 import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
 
 import 'package:spotibook2/Services/Auth_Service.dart';
@@ -163,7 +163,7 @@ class _SingInState extends State<SingIn> {
 
                             final userType = await FirestoreService().getUserType(user.uid);
                             if (userType == "Admin") {
-                              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Administradores()));
+                              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Verificaciones()));
                             } else if (userType == "Lector" || userType == "Autor"){
                               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Catalogo()));
                             } else {

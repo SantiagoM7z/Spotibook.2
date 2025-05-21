@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Buscar.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Perfil.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Biblioteca.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart'; // Asegúrate de que esta importación esté correcta
+import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
+import 'package:spotibook2/Pages/Index/Settings/Idioma.dart';
+import 'package:spotibook2/Pages/Index/Settings/Noti.dart';
+import 'package:spotibook2/Pages/Index/Settings/Pago.dart';
+import 'package:spotibook2/Pages/Index/Settings/SoportConf.dart';
+import 'package:spotibook2/Pages/Index/Settings/TemaConf.dart';
 
 class Configuracion extends StatefulWidget {
   const Configuracion({super.key});
@@ -12,29 +14,13 @@ class Configuracion extends StatefulWidget {
 }
 
 class _ConfiguracionState extends State<Configuracion> {
-  int _selectedIndex = 0;
+  final int _selectedIndex = 0;
 
-  // Método para cambiar de página con BottomNavigationBar
   void _onItemTapped(int index) {
     if (index == 0) {
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => Catalogo()), // Navegar a Catalogo
-      );
-    } else if (index == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => Buscar()), // Navegar a Buscar
-      );
-    } else if (index == 2) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => Biblioteca()), // Navegar a Biblioteca
-      );
-    } else if (index == 3) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => Perfil()), // Navegar a Perfil
+        MaterialPageRoute(builder: (_) => Catalogo()),
       );
     }
   }
@@ -52,9 +38,74 @@ class _ConfiguracionState extends State<Configuracion> {
         ),
         backgroundColor: Color(0xff2E4D4D),
         iconTheme: IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => Catalogo()),
+            );
+          },
+        ),
       ),
-      body: Center(
-        child: Text("Aquí va el contenido de configuración"),
+      body: ListView(
+        children: [
+          ListTile(
+            leading: Icon(Icons.language),
+            title: Text('Idioma'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => Idioma()),
+              );
+            },
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.notifications),
+            title: Text('Notificaciones'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => Noti()),
+              );
+            },
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.payment),
+            title: Text('Pago'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => Pago()),
+              );
+            },
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.support_agent),
+            title: Text('Soporte Técnico'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => SoportConf()),
+              );
+            },
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.color_lens),
+            title: Text('Configuración del tema'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => TemaConf()),
+              );
+            },
+          ),
+          Divider(),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

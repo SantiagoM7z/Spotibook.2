@@ -34,12 +34,10 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
   // Inicializa y escucha los enlaces profundos
   _initLinks() async {
     Uri? initialLink = await _appLinks.getInitialLink();
-    if (initialLink != null) {
-      setState(() {
-        deepLink = initialLink.toString();
-      });
-    }
-
+    setState(() {
+      deepLink = initialLink.toString();
+    });
+  
     // Escuchar futuros enlaces profundos mientras la app está en segundo plano
     _appLinks.uriLinkStream.listen((Uri? uri) {
       if (uri != null) {

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';  
-import 'package:spotibook2/Pages/Index/Lectores/Buscar.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Perfil.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Biblioteca.dart';
+import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart';
+import 'package:spotibook2/Pages/Index/Autores/PerfilA.dart';
+import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
+import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
-import 'ModuloLec.dart'; // Asegúrate de importar ModuloLec.dart correctamente
+import 'ModuloLecA.dart'; // Asegúrate de importar ModuloLec.dart correctamente
 
 class Catalogo extends StatefulWidget {
   const Catalogo({super.key});
@@ -31,7 +32,7 @@ class _CatalogoState extends State<Catalogo> {
       _buildLibros(), // Mostrar libros con imágenes
       _buildNovedades(), // Novedades 🆕
       _buildRecomendaciones(), // Recomendaciones 💡
-      _buildCategorias(), // Gén con ExpansionTile
+      _buildGeneros(), // Géneros con ExpansionTile
     ];
   }
 
@@ -39,8 +40,10 @@ class _CatalogoState extends State<Catalogo> {
     if (index == 1) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => Buscar()));
     } else if (index == 2) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => Biblioteca()));
+       Navigator.push(context, MaterialPageRoute(builder: (_) => AgregarA()));
     } else if (index == 3) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => Biblioteca()));
+    } else if (index == 4) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => Perfil()));
     } else {
       setState(() {
@@ -62,75 +65,75 @@ class _CatalogoState extends State<Catalogo> {
 
   // Mostrar libros con imágenes
   Widget _buildLibros() {
-  return Column(
-    children: <Widget>[
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ModuloLec()),
-              );
-            },
-            child: Container(
-              width: 100, // Ancho ajustado
-              height: 150, // Altura ajustada
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/libro1.png'),  // Ruta de la imagen del libro
-                  fit: BoxFit.cover,  // Asegura que la imagen se recorte y ajuste correctamente
+    return Column(
+      children: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ModuloLec()),
+                );
+              },
+              child: Container(
+                width: 100, // Ancho ajustado
+                height: 150, // Altura ajustada
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/libro1.png'),  // Ruta de la imagen del libro
+                    fit: BoxFit.cover,  // Asegura que la imagen se recorte y ajuste correctamente
+                  ),
+                  borderRadius: BorderRadius.circular(10),  // Bordes redondeados opcionales
                 ),
-                borderRadius: BorderRadius.circular(10),  // Bordes redondeados opcionales
               ),
             ),
-          ),
-          SizedBox(width: 10),  // Espaciado entre los libros
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ModuloLec()),
-              );
-            },
-            child: Container(
-              width: 100, // Ancho ajustado
-              height: 150, // Altura ajustada
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/libro2.png'),  // Ruta de la imagen del libro
-                  fit: BoxFit.cover,  // Asegura que la imagen se recorte y ajuste correctamente
+            SizedBox(width: 10),  // Espaciado entre los libros
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ModuloLec()),
+                );
+              },
+              child: Container(
+                width: 100, // Ancho ajustado
+                height: 150, // Altura ajustada
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/libro2.png'),  // Ruta de la imagen del libro
+                    fit: BoxFit.cover,  // Asegura que la imagen se recorte y ajuste correctamente
+                  ),
+                  borderRadius: BorderRadius.circular(10),  // Bordes redondeados opcionales
                 ),
-                borderRadius: BorderRadius.circular(10),  // Bordes redondeados opcionales
               ),
             ),
-          ),
-          SizedBox(width: 10),  // Espaciado entre los libros
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ModuloLec()),
-              );
-            },
-            child: Container(
-              width: 100, // Ancho ajustado
-              height: 150, // Altura ajustada
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/libro3.png'),  // Ruta de la imagen del libro
-                  fit: BoxFit.cover,  // Asegura que la imagen se recorte y ajuste correctamente
+            SizedBox(width: 10),  // Espaciado entre los libros
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ModuloLec()),
+                );
+              },
+              child: Container(
+                width: 100, // Ancho ajustado
+                height: 150, // Altura ajustada
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/libro3.png'),  // Ruta de la imagen del libro
+                    fit: BoxFit.cover,  // Asegura que la imagen se recorte y ajuste correctamente
+                  ),
+                  borderRadius: BorderRadius.circular(10),  // Bordes redondeados opcionales
                 ),
-                borderRadius: BorderRadius.circular(10),  // Bordes redondeados opcionales
               ),
             ),
-          ),
-        ],
-      ),
-    ],
-  );
-}
+          ],
+        ),
+      ],
+    );
+  }
 
   // Novedades 🆕
   static Widget _buildNovedades() {
@@ -143,7 +146,7 @@ class _CatalogoState extends State<Catalogo> {
   }
 
   // Categorías con ExpansionTile
-  static Widget _buildCategorias() {
+  static Widget _buildGeneros() {
     return ListView(
       children: <Widget>[
         ExpansionTile(
@@ -223,14 +226,7 @@ class _CatalogoState extends State<Catalogo> {
                   Navigator.pop(context); 
                   print("Foros");
                 },
-              ),
-              ListTile(
-                title: Text('Biblioteca'),
-                onTap: () {
-                  Navigator.pop(context);
-                  print("Biblioteca");
-                },
-              ),
+              )
             ],
             ListTile(
               title: Text('Configuración'),
@@ -261,7 +257,7 @@ class _CatalogoState extends State<Catalogo> {
                 _buildIconTab(Icons.book, "Libros", 0),
                 _buildIconTab(Icons.fiber_new, "Novedades", 1),
                 _buildIconTab(Icons.lightbulb, "Recomendaciones", 2),
-                _buildIconTab(Icons.category, "Categorías", 3),
+                _buildIconTab(Icons.category, "Géneros", 3),
               ],
             ),
           ),
@@ -287,6 +283,7 @@ class _CatalogoState extends State<Catalogo> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catalogo'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Agregar'), // Nuevo botón "+"
           BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Biblioteca'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],

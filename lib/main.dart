@@ -10,7 +10,7 @@ import 'package:spotibook2/Pages/Suport/TermsYCond.dart';
 import 'package:spotibook2/Services/Auth_Service.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:spotibook2/Pages/Index/Administradores/Administradores.dart';
+import 'package:spotibook2/Pages/Index/Administradores/Verificaciones.dart';
 import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
 
@@ -115,7 +115,7 @@ class Spotibook extends StatelessWidget {
   }
 
   Future<User?> _checkIfUserIsLoggedIn() async {
-    final user = await AuthService().getCurrentUser();
+    final user = AuthService().getCurrentUser();
     if (user != null) {
       final userType = await AuthService().getUserTypeFromUsers(user.uid);
       return userType != null ? user : null;
@@ -131,7 +131,7 @@ class Spotibook extends StatelessWidget {
           return Center(child: CircularProgressIndicator());
         }
         if (snapshot.data == "Admin") {
-          return Administradores();
+          return Verificaciones();
         } else if (snapshot.data == "Lector" || snapshot.data == "Autor") {
           return Catalogo();
         } else {

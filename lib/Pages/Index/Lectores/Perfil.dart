@@ -23,25 +23,35 @@ class _PerfilState extends State<Perfil> {
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _correoController = TextEditingController();
   final TextEditingController _contrasenaController = TextEditingController();
+  final TextEditingController _confirmContrasenaController = TextEditingController();
 
-  String imageUrl = 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; 
+  String imageUrl = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
   @override
   void initState() {
     super.initState();
     _cargarDatosUsuario();
+    _contrasenaController.text = ''; // Campo contraseña vacío
+    _confirmContrasenaController.text = '';
   }
 
   void _cargarDatosUsuario() async {
     final user = _auth.currentUser;
     if (user != null) {
       DocumentSnapshot userDoc = await _firestore.collection('usuarios').doc(user.uid).get();
+
       if (userDoc.exists) {
         setState(() {
-          _nombreController.text = userDoc['nombre'] ?? '';
+          // Si Firebase Auth tiene nombre, úsalo, sino usa Firestore
+          _nombreController.text = user.displayName ?? (userDoc['nombre'] ?? '');
           _correoController.text = user.email ?? '';
-          _contrasenaController.text = '********'; 
           imageUrl = userDoc['imagen'] ?? imageUrl;
+        });
+      } else {
+        // Si no existe doc en Firestore, usa Firebase Auth solo
+        setState(() {
+          _nombreController.text = user.displayName ?? '';
+          _correoController.text = user.email ?? '';
         });
       }
     }
@@ -50,15 +60,47 @@ class _PerfilState extends State<Perfil> {
   void _guardarCambios() async {
     final user = _auth.currentUser;
     if (user != null) {
-      await _firestore.collection('usuarios').doc(user.uid).set({
-        'nombre': _nombreController.text,
-        'imagen': imageUrl,
-        'correo': _correoController.text,
-      }, SetOptions(merge: true));
+      final newPassword = _contrasenaController.text.trim();
+      final confirmPassword = _confirmContrasenaController.text.trim();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Cambios guardados correctamente')),
-      );
+      // Validar que si una de las dos no está vacía, ambas coincidan
+      if (newPassword.isNotEmpty || confirmPassword.isNotEmpty) {
+        if (newPassword != confirmPassword) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Las contraseñas no coinciden')),
+          );
+          return;
+        }
+      }
+
+      try {
+        // Actualizar nombre en Firebase Authentication
+        await user.updateDisplayName(_nombreController.text);
+        await user.reload(); // Refrescar usuario
+
+        // Actualizar nombre e imagen en Firestore
+        await _firestore.collection('usuarios').doc(user.uid).set({
+          'nombre': _nombreController.text,
+          'imagen': imageUrl,
+          'correo': _correoController.text,
+        }, SetOptions(merge: true));
+
+        // Actualizar contraseña si fue escrita
+        if (newPassword.isNotEmpty) {
+          await user.updatePassword(newPassword);
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cambios guardados correctamente')),
+        );
+
+        _contrasenaController.clear();
+        _confirmContrasenaController.clear();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al guardar cambios: $e')),
+        );
+      }
     }
   }
 
@@ -77,10 +119,9 @@ class _PerfilState extends State<Perfil> {
   }
 
   Future<void> _seleccionarImagen() async {
-    // Aquí iría código para subir imagen a Firebase Storage y obtener el URL
-    // Por simplicidad se simula
+    // Aquí puedes implementar la selección y subida de imagen
     setState(() {
-      imageUrl = 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; 
+      imageUrl = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
     });
   }
 
@@ -88,8 +129,8 @@ class _PerfilState extends State<Perfil> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Perfil"),
-        backgroundColor: Color(0xff2E4D4D),
+        title: const Text("Perfil"),
+        backgroundColor: const Color(0xff2E4D4D),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
@@ -105,80 +146,39 @@ class _PerfilState extends State<Perfil> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextField(
               controller: _nombreController,
-              decoration: InputDecoration(labelText: "Nombre de Usuario"),
+              decoration: const InputDecoration(labelText: "Nombre de Usuario"),
             ),
-            TextField(
-              controller: _correoController,
-              decoration: InputDecoration(labelText: "Correo"),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  const Text("Correo: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(_correoController.text),
+                ],
+              ),
             ),
             TextField(
               controller: _contrasenaController,
               obscureText: true,
-              decoration: InputDecoration(labelText: "Contraseña"),
+              decoration: const InputDecoration(labelText: "Nueva Contraseña"),
             ),
-            SizedBox(height: 30),
+            TextField(
+              controller: _confirmContrasenaController,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: "Confirmar Nueva Contraseña"),
+            ),
+            const SizedBox(height: 30),
             ElevatedButton(
               onPressed: _guardarCambios,
-              style : ElevatedButton.styleFrom(
-                backgroundColor: Color(0xff2E4D4D),
-                shape: StadiumBorder(),
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xff2E4D4D),
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
               ),
-              child: Text("Guardar Cambios", style: TextStyle(fontSize: 16,)),
-            ),
-          ],
-        ),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              decoration: BoxDecoration(color: Color(0xff2E4D4D)),
-              child: Text(
-                'Menú',
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ),
-            ListTile(
-              title: Text('Notificaciones'),
-              onTap: () {
-                Navigator.pop(context);
-                print("Notificaciones");
-              },
-            ),
-            ListTile(
-              title: Text('Foros'),
-              onTap: () {
-                Navigator.pop(context);
-                print("Foros");
-              },
-            ),
-            ListTile(
-              title: Text('Biblioteca'),
-              onTap: () {
-                Navigator.pop(context);
-                print("Biblioteca");
-              },
-            ),
-            ListTile(
-              title: Text('Configuración'),
-              onTap: () {
-                Navigator.pop(context);
-                print("Configuración");
-              },
-            ),
-            ListTile(
-              title: Text('Cerrar sesión'),
-              onTap: () async {
-                await AuthService().signOut(); 
-                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()), 
-                (route) => false,
-                );
-              },
+              child: const Text("Guardar Cambios", style: TextStyle(fontSize: 16)),
             ),
           ],
         ),
@@ -186,26 +186,14 @@ class _PerfilState extends State<Perfil> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        backgroundColor: Color(0xff2E4D4D),
-        selectedItemColor: Color(0xff2E4D4D),
+        backgroundColor: const Color(0xff2E4D4D),
+        selectedItemColor: const Color(0xff2E4D4D),
         unselectedItemColor: Colors.grey,
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Catalogo',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Buscar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_books),
-            label: 'Biblioteca',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catalogo'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
+          BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Biblioteca'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
       ),
     );

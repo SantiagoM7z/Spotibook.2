@@ -53,4 +53,47 @@ class FirestoreService {
       return null;
     }
   }
+  // * Guardar la información del libro en Firestore
+  Future<void> saveBook({
+    required String titulo,
+    required String autor,
+    required String editorial,
+    required String sinopsis,
+    required List<String> etiquetas,
+    required String portadaUrl,
+    required String archivoUrl,
+    bool solicitud = true,
+  }) async {
+    try {
+      await _db.collection('libros').add({
+        'titulo': titulo,
+        'autor': autor,
+        'editorial': editorial,
+        'sinopsis': sinopsis,
+        'etiquetas': etiquetas,
+        'portadaUrl': portadaUrl,
+        'archivoUrl': archivoUrl,
+        'fechaSubida': FieldValue.serverTimestamp(),
+        'estado': 'pendiente',
+        'solicitud': solicitud,
+      });
+    } catch (e) {
+      print("Error al guardar el libro en Firestore: $e");
+      rethrow;
+    }
+  }
+
+  // * Cargar etiquetas
+  Future<List<Map<String, dynamic>>> loadTags() async {
+    try {
+      final querySnapshot = await _db.collection('etiquetas').get();
+      return querySnapshot.docs.map((doc) => {
+        'id': doc.id,
+        'nombre': doc['nombre'] ?? ''
+      }).toList();
+    } catch (e) {
+      print("Error al cargar etiquetas: $e");
+      return [];
+    }
+  }
 }

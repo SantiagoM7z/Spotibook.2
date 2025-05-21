@@ -11,14 +11,14 @@ import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Services/firestore_service.dart';
 import 'package:spotibook2/Services/Dropbox_config.dart';
 
-class AgregarE extends StatefulWidget {
-  const AgregarE({super.key});
+class AgregarA extends StatefulWidget {
+  const AgregarA({super.key});
 
   @override
-  State<AgregarE> createState() => _AgregarEState();
+  State<AgregarA> createState() => _AgregarAState();
 }
 
-class _AgregarEState extends State<AgregarE> {
+class _AgregarAState extends State<AgregarA> {
   final _formKey = GlobalKey<FormState>();
   final FirestoreService _firestoreService = FirestoreService();
   final DropboxService _dropboxService = DropboxService();
