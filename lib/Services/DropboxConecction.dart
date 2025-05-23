@@ -1,6 +1,7 @@
-import 'package:dropbox_client/dropbox_client.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
+import 'package:spotibook2/Services/Dropbox_config.dart';
 
 class DropboxService {
   // Singleton
@@ -8,52 +9,75 @@ class DropboxService {
   factory DropboxService() => _instance;
   DropboxService._internal();
 
-  bool _initialized = false;
+  // Token de acceso a Dropbox
+  final String _accessToken = 'TU_DROPBOX_ACCESS_TOKEN_AQUI'; // Mejor si usas un archivo config seguro
 
-  // Inicializa Dropbox con tu APP_KEY
-  Future<void> init() async {
-    if (!_initialized) {
-      await Dropbox.init('bi44noe3zqjcn98','','');
-      _initialized = true;
-    }
-  }
-
-  // Subir archivo local a Dropbox
-  Future<String?> uploadFile(String localPath, String dropboxPath) async {
-    await init();
+  // Subir archivo (bytes) a Dropbox
+  Future<String?> uploadFileBytes(List<int> fileBytes, String dropboxPath) async {
     try {
-      final res = await Dropbox.upload(localPath, dropboxPath);
-      return res; // Devuelve ruta o resultado
+      final uploadResponse = await http.post(
+        Uri.parse('https://content.dropboxapi.com/2/files/upload'),
+        headers: {
+          'Authorization': 'Bearer $_accessToken',
+          'Content-Type': 'application/octet-stream',
+          'Dropbox-API-Arg': jsonEncode({
+            'path': dropboxPath,
+            'mode': 'add',
+            'autorename': true,
+            'mute': false
+          }),
+        },
+        body: fileBytes,
+      );
+
+      if (uploadResponse.statusCode != 200) {
+        throw Exception('Error al subir archivo: ${uploadResponse.body}');
+      }
+
+      // Obtener enlace compartido público
+      return await _getSharedLink(dropboxPath);
     } catch (e) {
-      print('Error subiendo archivo a Dropbox: $e');
+      print('Error Dropbox upload: $e');
       return null;
     }
   }
 
-  // Crear enlace compartido para un archivo
-  Future<String?> createSharedLink(String dropboxPath, String accessToken) async {
+  // Crear enlace compartido público
+  Future<String?> _getSharedLink(String dropboxPath) async {
     final url = 'https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings';
 
     final response = await http.post(
       Uri.parse(url),
       headers: {
-        'Authorization': 'Bearer $accessToken',
+        'Authorization': 'Bearer ${DropboxConfig.token}',
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
         'path': dropboxPath,
-        'settings': {'requested_visibility': 'public'},
+        'settings': {'requested_visibility': 'public'}
       }),
     );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['url'];
+      final json = jsonDecode(response.body);
+      // Modificar url para acceso directo a la imagen
+      return json['url'].replaceFirst('?dl=0', '?raw=1');
     } else {
       print('Error creando enlace compartido: ${response.body}');
       return null;
     }
   }
 
-  // Otros métodos útiles pueden agregarse aquí (descargar, eliminar, listar archivos, etc.)
+  // Método auxiliar para subir archivo desde ruta local (File)
+  Future<String?> uploadFileFromPath(String localPath, String dropboxPath) async {
+    try {
+      final bytes = await File(localPath).readAsBytes();
+      return await uploadFileBytes(bytes, dropboxPath);
+    } catch (e) {
+      print('Error leyendo archivo local: $e');
+      return null;
+    }
+  }
+
+  // Puedes agregar más métodos para descargar, eliminar, listar archivos, etc.
 }

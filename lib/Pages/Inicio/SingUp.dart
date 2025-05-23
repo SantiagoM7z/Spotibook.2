@@ -51,9 +51,11 @@ class _SingUpState extends State<SingUp> {
 
   // Mostrar AlertDialog para el código de verificación
   void _mostrarDialogoCodigoVerificacion(String userId, int codigoVerificacion) {
+    final mainContext = context; // Contexto padre para navegación segura
+    
     showDialog(
-      context: context,
-      builder: (context) {
+      context: mainContext,
+      builder: (contextDialog) {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
@@ -97,66 +99,82 @@ class _SingUpState extends State<SingUp> {
                 ],
               ),
               actions: <Widget>[
-              // Botón para verificar el código
-              ElevatedButton(
-                onPressed: isCodigoValido ? () async {
-                  String codigoIngresado = codigoControllers.map((e) => e.text).join();
-                  DocumentSnapshot verificacionDoc = await FirebaseFirestore.instance
-                      .collection('verificaciones')
-                      .doc(userId)
-                      .get();
+                // Botón para verificar el código
+                ElevatedButton(
+                  onPressed: isCodigoValido ? () async {
+                    String codigoIngresado = codigoControllers.map((e) => e.text).join();
+                    DocumentSnapshot verificacionDoc = await FirebaseFirestore.instance
+                        .collection('verificaciones')
+                        .doc(userId)
+                        .get();
 
-                  if (verificacionDoc.exists) {
-                    final storedCodigo = verificacionDoc['codigo'].toString();
-                    if (codigoIngresado == storedCodigo) {
-                      // Si el código es correcto, actualizamos el estado del usuario
-                      await FirebaseFirestore.instance.collection('users').doc(userId).update({
-                        'verificado': true,  // Actualiza el campo de verificación en la colección 'users'
-                      });
+                    if (verificacionDoc.exists) {
+                      final storedCodigo = verificacionDoc['codigo'].toString();
+                      if (codigoIngresado == storedCodigo) {
+                        // Si el código es correcto, actualizamos el estado del usuario
+                        await FirebaseFirestore.instance.collection('users').doc(userId).update({
+                          'verificado': true,
+                        });
 
-                      setState(() {
-                        isCodigoValido = true;
-                      });
+                        setState(() {
+                          isCodigoValido = true;
+                        });
 
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("¡Cuenta verificada con éxito!")));
-                      if (widget.UserType == 'Editorial') {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => BibliotecaE()));
+                        ScaffoldMessenger.of(mainContext).showSnackBar(
+                          SnackBar(content: Text("¡Cuenta verificada con éxito!"))
+                        );
+
+                        // Cerrar el diálogo primero
+                        Navigator.of(contextDialog).pop();
+
+                        // Navegar usando el contexto principal
+                        if (widget.UserType == 'Editorial') {
+                          Navigator.pushReplacement(
+                            mainContext, 
+                            MaterialPageRoute(builder: (context) => BibliotecaE())
+                          );
+                        } else {
+                          Navigator.pushReplacement(
+                            mainContext, 
+                            MaterialPageRoute(builder: (context) => Catalogo())
+                          );
+                        }
                       } else {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Catalogo()));
+                        setState(() {
+                          isCodigoValido = false;
+                        });
+                        ScaffoldMessenger.of(mainContext).showSnackBar(
+                          SnackBar(content: Text("Código incorrecto, por favor verifica los números."))
+                        );
                       }
-                    } else {
-                      setState(() {
-                        isCodigoValido = false;
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Código incorrecto, por favor verifica los números.")));
                     }
-                  }
-                } : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isformvalid ? const Color(0xff2E4D4D) : Colors.grey,),
-                child: Text("Verificar"),
-              ),
-              // Botón para reenviar el código
-              TextButton(
-                onPressed: () async {
-                  final nuevoCodigoVerificacion = generarCodigoVerificacion();
+                  } : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isformvalid ? const Color(0xff2E4D4D) : Colors.grey,
+                  ),
+                  child: Text("Verificar"),
+                ),
+                // Botón para reenviar el código
+                TextButton(
+                  onPressed: () async {
+                    final nuevoCodigoVerificacion = generarCodigoVerificacion();
 
-                  // Actualizar el código de verificación en Firestore (sin crear un nuevo documento)
-                  await FirebaseFirestore.instance.collection('verificaciones').doc(userId).update({
-                    'codigo': nuevoCodigoVerificacion, // Actualiza el campo 'codigo'
-                    'creadoEn': FieldValue.serverTimestamp(), // Actualiza la fecha de creación
-                  });
+                    await FirebaseFirestore.instance.collection('verificaciones').doc(userId).update({
+                      'codigo': nuevoCodigoVerificacion,
+                      'creadoEn': FieldValue.serverTimestamp(),
+                    });
 
-                  // Enviar el correo con el nuevo código de verificación
-                  await enviarCorreoVerificacion(
-                    destinatario: correoController.text, // Usamos el correo proporcionado
-                    username: nombreController.text, // Usamos el nombre de usuario proporcionado
-                    codigoVerificacion: nuevoCodigoVerificacion.toString(),
-                  );
+                    await enviarCorreoVerificacion(
+                      destinatario: correoController.text,
+                      username: nombreController.text,
+                      codigoVerificacion: nuevoCodigoVerificacion.toString(),
+                    );
 
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Código Reenviado al Correo.")));
-                },
-                child: Text("Reenviar Código"),
+                    ScaffoldMessenger.of(mainContext).showSnackBar(
+                      SnackBar(content: Text("Código Reenviado al Correo."))
+                    );
+                  },
+                  child: Text("Reenviar Código"),
                 ),
               ],
             );
@@ -249,7 +267,14 @@ class _SingUpState extends State<SingUp> {
                   if (user != null) {
                     // Llamada a Firestore para guardar el usuario
                     if (userType == 'Editorial') {
-                      await FirestoreService().saveEditorial(user, nombreLegalController.text, rfcController.text, direccionController.text, telefonoController.text, username); // Agregar el username
+                      await FirestoreService().saveEditorial(
+                        user, 
+                        nombreLegalController.text, 
+                        rfcController.text, 
+                        direccionController.text, 
+                        telefonoController.text, 
+                        username
+                      );
                     } else {
                       await FirestoreService().saveUser(user, username, userType);
                     }
@@ -270,7 +295,9 @@ class _SingUpState extends State<SingUp> {
                     // Mostrar el diálogo para ingresar el código
                     _mostrarDialogoCodigoVerificacion(user.uid, codigoVerificacion);
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al Registrar")));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Error al Registrar"))
+                    );
                   }
                 } : null,
                 style: ElevatedButton.styleFrom(
@@ -293,18 +320,19 @@ class _SingUpState extends State<SingUp> {
 
   Widget nombre() => campoTexto("Nombre de Usuario", nombreController, TextInputType.text, true);
 
-  Widget contrasenia() => campoTexto("Contraseña", contraseniaController, TextInputType.visiblePassword, true, obscure: true, validator: (value) {
-    if (value == null || value.isEmpty) return "Contraseña obligatoria";
-    if (value.length < 8) return "Debe tener mínimo 8 caracteres";
-    return null;
-  });
-
-  Widget confirmcontrasenia() => campoTexto("Confirme la contraseña", confirmContraseniaController, TextInputType.visiblePassword, true, 
+  Widget contrasenia() => campoTexto("Contraseña", contraseniaController, TextInputType.visiblePassword, true, 
     obscure: true, validator: (value) {
+      if (value == null || value.isEmpty) return "Contraseña obligatoria";
+      if (value.length < 8) return "Debe tener mínimo 8 caracteres";
+      return null;
+    });
+
+  Widget confirmcontrasenia() => campoTexto("Confirme la contraseña", confirmContraseniaController, 
+    TextInputType.visiblePassword, true, obscure: true, validator: (value) {
       if (value == null || value.isEmpty) return "Confirme la contraseña";
       if (value != contraseniaController.text) return "Las contraseñas no coinciden";
       return null;
-  });
+    });
 
   Widget nombrelegal() => campoTexto("Nombre Legal de la Editorial", nombreLegalController, TextInputType.text, true);
 
@@ -323,6 +351,7 @@ class _SingUpState extends State<SingUp> {
   );
 
   Widget direccion() => campoTexto("Dirección de Oficinas", direccionController, TextInputType.text, true);
+  
   Widget telefono() => campoTexto("Teléfono de Contacto", telefonoController, TextInputType.phone, true);
 
   Widget campoTexto(String hint, TextEditingController controller, TextInputType tipo, bool obligatorio,

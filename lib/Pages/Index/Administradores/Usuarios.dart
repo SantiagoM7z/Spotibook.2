@@ -3,6 +3,8 @@ import 'Verificaciones.dart';
 import 'Foros.dart';
 import 'Editoriales.dart';
 import 'CentroA.dart';
+import 'package:spotibook2/Services/Auth_Service.dart'; 
+import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 
 class Usuarios extends StatefulWidget {
   const Usuarios({super.key});
@@ -58,6 +60,29 @@ class _UsuariosState extends State<Usuarios> {
           BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Foros'),
           BottomNavigationBarItem(icon: Icon(Icons.help_center), label: 'Centro de ayuda'),
         ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xff2E4D4D)),
+              child: Text(
+                'Menú',
+                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              title: Text('Cerrar sesión'),
+              onTap: () async {
+                await AuthService().signOut(); 
+                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()),
+                (route) => false, 
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

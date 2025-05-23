@@ -1,6 +1,7 @@
 // Archivo seguro para almacenar credenciales (NO SUBIR A GIT)
 class DropboxConfig {
-  static const String token = 'sl.u.sl.u.AFuYearL-yGzIeX9klBDGNZcGJF5h4PFitOyxlBrj3vR82CWxqkBKwW03vaDljNf7MDbrfT7GP4zdhYR7a8''LeuyCx7katlE2iM4eXZkSqQuAuQSzdqVEn9zIUffO-ZYWMG93D2yWRW6eEEY9fCCYVuX0yRAuO7GcFomyoUs3j0o_KRB9sIa4pXhymlECSTZ7ZX00k6nwaw0_'+
+  static const String token = 'sl.u.sl.u.AFuYearL-yGzIeX9klBDGNZcGJF5h4PFitOyxlBrj3vR82CWxqkBKwW03vaDljNf7MDbrfT7GP4zdhYR7a8'+
+  'LeuyCx7katlE2iM4eXZkSqQuAuQSzdqVEn9zIUffO-ZYWMG93D2yWRW6eEEY9fCCYVuX0yRAuO7GcFomyoUs3j0o_KRB9sIa4pXhymlECSTZ7ZX00k6nwaw0_'+
   'rMLlEirUiTNl76tC5coFFHtn3rSXUKCK1rPY9R8d_FmRArbtSaovv6A8HSBg01xdeGOFoYw0lgY4EqroxzUUqqog8t83-0DaPYAtMTaXkJWLLRvp36XGkQojCE'+
   'a2Noed1fYBehHC3DFh8NOlMjDM-DqDb4-oSRdg2ENxne8kLd_JQqyL3gk8bJFu8oek3r4c8Wla0rHEYECPEG1MkBP5zsCF1lE_oGWM-nc9rpFLMbMwF4pUtZigcnw7B'+
   '4MlOlIBxpQJNsLCQNR6zuIBzyFbquRfbfdsfTSPteOSxfsZdwhVQo2Rss03gNjSfKrUY84CvPjU2UI_h12b39KVbFD07ORZp9-CBQ_HdvpsZKuknIOV37kYipwLgTO3'+

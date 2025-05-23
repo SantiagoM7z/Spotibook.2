@@ -3,7 +3,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:spotibook2/Services/Auth_Service.dart'; 
+import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 class AoD extends StatelessWidget {
   final String documentId;
   final Map<String, dynamic> libro;
@@ -287,6 +288,29 @@ class AoD extends StatelessWidget {
                   child: const Text('Rechazar', style: TextStyle(color: Colors.white)),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xff2E4D4D)),
+              child: Text(
+                'Menú',
+                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              title: Text('Cerrar sesión'),
+              onTap: () async {
+                await AuthService().signOut(); 
+                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()),
+                (route) => false, 
+                );
+              },
             ),
           ],
         ),

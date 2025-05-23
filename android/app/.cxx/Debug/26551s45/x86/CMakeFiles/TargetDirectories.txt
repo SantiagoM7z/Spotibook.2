@@ -1,0 +1,2 @@
+C:/Users/Lenovo/Documents/FlutterProjects/spotibook.2/spotibook2/android/app/.cxx/Debug/26551s45/x86/CMakeFiles/edit_cache.dir
+C:/Users/Lenovo/Documents/FlutterProjects/spotibook.2/spotibook2/android/app/.cxx/Debug/26551s45/x86/CMakeFiles/rebuild_cache.dir
