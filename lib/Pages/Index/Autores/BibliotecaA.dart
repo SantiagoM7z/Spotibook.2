@@ -1,29 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:spotibook2/Services/Auth_Service.dart'; 
-import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Buscar.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Perfil.dart';
+import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
+import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart';
+import 'package:spotibook2/Pages/Index/Autores/PerfilA.dart';
+import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 
-class Biblioteca extends StatefulWidget {
-  const Biblioteca({super.key});
+class BibliotecaA extends StatefulWidget {
+  const BibliotecaA({super.key});
 
   @override
-  State<Biblioteca> createState() => _BibliotecaState();
+  State<BibliotecaA> createState() => _BibliotecaAState();
 }
 
-class _BibliotecaState extends State<Biblioteca> {
+class _BibliotecaAState extends State<BibliotecaA> {
   int _selectedIndex = 2;
   int _paginaActual = 0;
   final PageController _pageController = PageController();
 
   void _onItemTapped(int index) {
     if (index == 0) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => Catalogo()));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => CatalogoA()));
     } else if (index == 1) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => Buscar()));
-    } else if (index == 3) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => Perfil()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => BuscarA()));
+    } else if (index == 2) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => AgregarA()));
+    } else if (index == 4) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => PerfilA()));
     }
 
     setState(() {
@@ -113,22 +116,11 @@ class _BibliotecaState extends State<Biblioteca> {
         selectedItemColor: Color(0xff2E4D4D),
         unselectedItemColor: Colors.grey,
         items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Catalogo',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Buscar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_books),
-            label: 'Biblioteca',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catalogo'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Agregar'),
+          BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Biblioteca'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
       ),
     );

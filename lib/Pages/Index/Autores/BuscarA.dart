@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Perfil.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Biblioteca.dart';
+import 'package:spotibook2/Pages/Index/Autores/PerfilA.dart';
+import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
+import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
+import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart';
 
-class Buscar extends StatefulWidget {
-  const Buscar({super.key});
+class BuscarA extends StatefulWidget {
+  const BuscarA({super.key});
 
   @override
-  State<Buscar> createState() => _BuscarState();
+  State<BuscarA> createState() => _BuscarAState();
 }
 
-class _BuscarState extends State<Buscar> {
+class _BuscarAState extends State<BuscarA> {
   final TextEditingController _controller = TextEditingController();
   List<String> libros = [
     "Cien años de soledad",
@@ -43,11 +44,13 @@ class _BuscarState extends State<Buscar> {
 
   void _onItemTapped(int index) {
     if (index == 0) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => Catalogo()));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => CatalogoA()));
     } else if (index == 2) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => Biblioteca()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => AgregarA())); 
     } else if (index == 3) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => Perfil()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => BibliotecaA()));
+    } else if (index == 4) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => PerfilA()));
     }
 
     setState(() {
@@ -110,22 +113,11 @@ class _BuscarState extends State<Buscar> {
         selectedItemColor: Color(0xff2E4D4D),
         unselectedItemColor: Colors.grey,
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Catalogo',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Buscar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_books),
-            label: 'Biblioteca',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catalogo'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Agregar'),
+          BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Biblioteca'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
       ),
     );

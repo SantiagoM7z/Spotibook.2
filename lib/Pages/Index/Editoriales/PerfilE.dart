@@ -66,8 +66,6 @@ class _PerfilEState extends State<PerfilE> {
       Navigator.push(context, MaterialPageRoute(builder: (_) => BibliotecaE()));
     } else if (index == 1) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => AgregarE()));
-    } else if (index == 2) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => PerfilE()));
     } else {
       setState(() {
         _selectedIndex = index;

@@ -53,6 +53,7 @@ class FirestoreService {
       return null;
     }
   }
+
   // * Guardar la información del libro en Firestore
   Future<void> saveBook({
     required String titulo,
@@ -87,13 +88,16 @@ class FirestoreService {
   Future<List<Map<String, dynamic>>> loadTags() async {
     try {
       final querySnapshot = await _db.collection('etiquetas').get();
-      return querySnapshot.docs.map((doc) => {
-        'id': doc.id,
-        'nombre': doc['nombre'] ?? ''
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'nombre': data.containsKey('nombre') ? data['nombre'] : 'Nombre Desconocido' 
+        };
       }).toList();
     } catch (e) {
-      print("Error al cargar etiquetas: $e");
-      return [];
+      print("Error en FirestoreService al cargar etiquetas: $e");
+      rethrow;
     }
   }
 }

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
+import 'package:spotibook2/Pages/Index/Editoriales/PerfilE.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Services/firestore_service.dart';
@@ -22,6 +23,7 @@ class _AgregarEState extends State<AgregarE> {
   final _formKey = GlobalKey<FormState>();
   final FirestoreService _firestoreService = FirestoreService();
   final DropboxService _dropboxService = DropboxService();
+  final int _selectedIndex = 1; // Índice para "Subir"
 
   // Controladores
   TextEditingController tituloController = TextEditingController();
@@ -36,6 +38,16 @@ class _AgregarEState extends State<AgregarE> {
   String? filePath;
   List<String> selectedTags = [];
   List<Map<String, dynamic>> allTags = [];
+
+  void _onItemTapped(int index) {
+    if (index == 0) {
+      Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (_) => const BibliotecaE()),);
+    } else if (index == 2) {
+      Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (_) => const PerfilE()),);
+    }
+  }
 
   @override
   void initState() {
@@ -91,7 +103,6 @@ class _AgregarEState extends State<AgregarE> {
     setState(() => isUploading = true);
 
     try {
-      // Confirmación
       final confirm = await showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -118,7 +129,6 @@ class _AgregarEState extends State<AgregarE> {
         return;
       }
 
-      // Subir archivos
       final imageFile = File(imagePath!);
       final imageName = 'portada_${DateTime.now().millisecondsSinceEpoch}${path.extension(imagePath!)}';
       final imageUrl = await _dropboxService.uploadFile(imageFile, '/Revisión/$imageName');
@@ -127,7 +137,6 @@ class _AgregarEState extends State<AgregarE> {
       final bookName = 'libro_${DateTime.now().millisecondsSinceEpoch}${path.extension(filePath!)}';
       final fileUrl = await _dropboxService.uploadFile(bookFile, '/Revisión/$bookName');
 
-      // Guardar en Firestore
       await _firestoreService.saveBook(
         titulo: tituloController.text,
         autor: autorController.text,
@@ -140,7 +149,7 @@ class _AgregarEState extends State<AgregarE> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Archivos subidos exitosamente'),
+          content: Text('Archivos subidos exitosamente'),
           backgroundColor: Colors.green,
         ),
       );
@@ -153,7 +162,7 @@ class _AgregarEState extends State<AgregarE> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ Error: ${e.toString()}'),
+          content: Text('Error: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -416,6 +425,27 @@ class _AgregarEState extends State<AgregarE> {
           ],
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        backgroundColor: const Color(0xff2E4D4D),
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.grey,
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Biblioteca',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add),
+            label: 'Subir',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Perfil',
+          ),
+        ],
+      ),
     );
   }
 }
@@ -423,7 +453,6 @@ class _AgregarEState extends State<AgregarE> {
 class DropboxService {
   Future<String> uploadFile(File file, String dropboxPath) async {
     try {
-      // Subir archivo
       final uploadResponse = await http.post(
         Uri.parse('https://content.dropboxapi.com/2/files/upload'),
         headers: {
@@ -443,7 +472,6 @@ class DropboxService {
         throw Exception('Error al subir: ${uploadResponse.body}');
       }
 
-      // Obtener enlace público
       return await _getSharedLink(dropboxPath);
     } catch (e) {
       throw Exception('Error Dropbox: $e');

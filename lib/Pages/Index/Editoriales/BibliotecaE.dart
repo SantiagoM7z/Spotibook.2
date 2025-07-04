@@ -15,17 +15,15 @@ class _BibliotecaEState extends State<BibliotecaE> {
   int _selectedIndex = 2;
 
   void _onItemTapped(int index) {
-    if (index == 0) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => BibliotecaE()));
-    } else if (index == 3) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => PerfilE()));
+    if (index == 1) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AgregarE()));
     } else if (index == 2) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => AgregarE()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => PerfilE()));
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
     }
-
-    setState(() {
-      _selectedIndex = index;
-    });
   }
 
   @override

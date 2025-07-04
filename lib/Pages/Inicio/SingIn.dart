@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
+import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
 import 'package:spotibook2/Pages/Index/Administradores/Verificaciones.dart';
 import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
 
@@ -102,13 +103,6 @@ class _SingInState extends State<SingIn> {
 
   Widget _body() {
     return Container(
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage("assets/images/.png"),
-          fit: BoxFit.cover,
-          filterQuality: FilterQuality.high,
-        ),
-      ),
       child: Center(
         child: SingleChildScrollView(
           child: Column(
@@ -164,8 +158,10 @@ class _SingInState extends State<SingIn> {
                             final userType = await FirestoreService().getUserType(user.uid);
                             if (userType == "Admin") {
                               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Verificaciones()));
-                            } else if (userType == "Lector" || userType == "Autor"){
+                            } else if (userType == "Lector"){
                               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Catalogo()));
+                            } else if (userType == "Autor"){
+                              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => CatalogoA()));
                             } else {
                               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => BibliotecaE()));
                             }

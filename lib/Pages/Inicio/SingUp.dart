@@ -207,13 +207,6 @@ class _SingUpState extends State<SingUp> {
   // Widget de los campos del formulario
   Widget cuerpo(String tipoUsuario) {
     return Container(
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage("assets/images/.png"),
-          fit: BoxFit.cover,
-          filterQuality: FilterQuality.high,
-        ),
-      ),
       child: Center(
         child: SingleChildScrollView(
           child: Column(

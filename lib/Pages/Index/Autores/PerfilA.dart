@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Buscar.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
-import 'package:spotibook2/Pages/Index/Lectores/Biblioteca.dart';
+import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart';
+import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
+import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 
-class Perfil extends StatefulWidget {
-  const Perfil({super.key});
+class PerfilA extends StatefulWidget {
+  const PerfilA({super.key});
 
   @override
-  State<Perfil> createState() => _PerfilState();
+  State<PerfilA> createState() => _PerfilAState();
 }
 
-class _PerfilState extends State<Perfil> {
+class _PerfilAState extends State<PerfilA> {
   int _selectedIndex = 3;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -64,11 +65,13 @@ class _PerfilState extends State<Perfil> {
 
   void _onItemTapped(int index) {
     if (index == 0) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => Catalogo()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => CatalogoA()));
+    } else if (index == 1) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => BuscarA()));
     } else if (index == 2) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => Buscar()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => AgregarA()));
     } else if (index == 3) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => Biblioteca()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => BibliotecaA()));
     } else {
       setState(() {
         _selectedIndex = index;
@@ -190,22 +193,11 @@ class _PerfilState extends State<Perfil> {
         selectedItemColor: Color(0xff2E4D4D),
         unselectedItemColor: Colors.grey,
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Catalogo',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Buscar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_books),
-            label: 'Biblioteca',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home),label: 'Catalogo'),
+          BottomNavigationBarItem(icon: Icon(Icons.search),label: 'Buscar'),
+          BottomNavigationBarItem(icon: Icon(Icons.add),label: 'Agregar'),
+          BottomNavigationBarItem(icon: Icon(Icons.library_books),label: 'Biblioteca'),
+          BottomNavigationBarItem(icon: Icon(Icons.person),label: 'Perfil'),
         ],
       ),
     );
