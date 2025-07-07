@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart';
 import 'package:spotibook2/Pages/Index/Autores/PerfilA.dart';
-import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
+import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart'; // Tu BibliotecaA ajustada para autor
 import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
-import 'package:spotibook2/Pages/Index/Autores/ModuloLecA.dart'; // Asegúrate de que esta importación sea correcta para el módulo de lectura de AUTORES
-// Si necesitas interactuar con Dropbox para obtener las URLs de los libros,
-// asegúrate de importar el servicio de Dropbox.
-// import 'package:spotibook2/Services/DropboxService.dart'; // Descomenta si lo usas aquí directamente
+import 'package:spotibook2/Pages/Index/Autores/ModuloLecA.dart';
+import 'package:spotibook2/Pages/Index/Settings/Configuracion.dart'; 
+import 'package:spotibook2/Services/Firestore_service.dart'; // Importa FirestoreService
+import 'package:spotibook2/Pages/Index/Autores/NotificacionesA.dart'; // Importación para NotificacionesA
 
 class CatalogoA extends StatefulWidget {
   const CatalogoA({super.key});
@@ -19,81 +19,107 @@ class CatalogoA extends StatefulWidget {
 
 class _CatalogoAState extends State<CatalogoA> {
   int _selectedIndex = 0;
-  int _paginaActual = 0;
+  int _paginaActual = 0; // Para controlar las pestañas internas del catálogo
   final PageController _pageController = PageController();
 
-  // Esta variable es importante. Para el Catálogo de Autores,
-  // es probable que `isAuthor` sea siempre `true` o se determine al inicio de la sesión.
-  bool isAuthor = true; // Asumiendo que esta vista es para autores
+  List<Map<String, dynamic>> _books = [];
+  bool _isLoadingBooks = true; // Para controlar el estado de carga de los libros
+  String? _booksError; // Para manejar errores en la carga de libros
 
-  // Aquí se agregan las páginas. _buildLibros ahora es un Widget que se construye
-  // con un FutureBuilder para cargar las imágenes dinámicamente.
-  late List<Widget> _paginas;
-
-  // Lista para almacenar las URLs de las portadas de los libros del autor.
-  List<String> _bookCoverUrls = [];
+  // Las páginas se inicializan dinámicamente.
+  List<Widget> _paginas = []; // Inicializamos con una lista vacía
+  bool _isPageContentInitialized = false; // Nuevo flag para controlar la inicialización de las páginas
 
   @override
   void initState() {
     super.initState();
-    // Iniciar la carga de las URLs de las portadas de los libros del autor.
-    _fetchAuthorBookCovers();
-    // Inicializamos las páginas DESPUÉS de iniciar la carga.
-    _paginas = [
-      _buildLibros(), // Mostrar libros con imágenes dinámicas
-      _buildNovedades(), // Novedades 🆕
-      _buildRecomendaciones(), // Recomendaciones 💡
-      _buildGeneros(), // Géneros con ExpansionTile
-    ];
+    _initializePageContent(); // Función para manejar la inicialización del contenido de las páginas
   }
 
-  // Simula la obtención de URLs de portadas de los libros del autor.
-  // En una app real, esto llamaría a tu backend/DropboxService para obtener
-  // los libros ESPECÍFICOS de este autor.
-  Future<void> _fetchAuthorBookCovers() async {
-    // === LÓGICA DE SIMULACIÓN PARA LIBROS DE AUTOR ===
-    // En una aplicación real:
-    // 1. Obtendrías el ID del autor actualmente logueado (por ejemplo, desde Firebase Auth).
-    // 2. Consultarías tu base de datos (Firestore, Realtime DB) para encontrar los libros
-    //    asociados a ese autor.
-    // 3. De cada libro, extraerías la 'portadaUrlDropbox' que hayas guardado.
-    //
-    // Ejemplo de URLs de ejemplo.
-    // IMPORTANTE: Reemplaza estas URLs con URLs REALES de TUS imágenes en Dropbox
-    // que representen los libros de un autor.
-    final List<String> dummyAuthorUrls = [
-      'https://www.dropbox.com/scl/fi/a1b2c3d4e5f6a7b8c9d01/autor_libro1.jpg?rlkey=xxxxxx&raw=1', // <-- Reemplaza con tus URLs reales
-      'https://www.dropbox.com/scl/fi/f0e9d8c7b6a5e4d3c2b10/autor_libro2.jpg?rlkey=yyyyyy&raw=1', // <-- Reemplaza con tus URLs reales
-      'https://www.dropbox.com/scl/fi/b3c4d5e6f7a8b9c0d1e2/autor_libro3.jpg?rlkey=zzzzzz&raw=1', // <-- Reemplaza con tus URLs reales
-      'https://www.dropbox.com/scl/fi/e2f3a4b5c6d7e8f90123/autor_libro4.jpg?rlkey=aaaaaa&raw=1', // <-- Reemplaza con tus URLs reales
-      // Agrega más URLs de ejemplo de los libros de un autor aquí
-    ];
-
-    // Simula un retardo de red
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) { // Asegura que el widget sigue montado antes de llamar setState
+  // Función para manejar la inicialización del contenido de las páginas de autor.
+  // Ahora carga directamente todos los libros, sin depender del UID del autor para el filtrado.
+  Future<void> _initializePageContent() async {
+    // Primero, muestra un indicador de carga mientras se obtienen los datos iniciales
+    if (mounted) {
       setState(() {
-        _bookCoverUrls = dummyAuthorUrls;
+        _isPageContentInitialized = false;
+        // Se asignan CircularProgressIndicator a _paginas para mostrar un estado de carga inicial.
+        _paginas = [
+          const Center(child: CircularProgressIndicator()),
+          const Center(child: CircularProgressIndicator()),
+          const Center(child: CircularProgressIndicator()),
+          const Center(child: CircularProgressIndicator()),
+        ];
+      });
+    }
+
+    // Carga todos los libros del catálogo, ya que el autor también interactúa como lector.
+    await _fetchAllBooks();
+
+    // Una vez que los datos están listos, actualiza _paginas con el contenido real
+    if (mounted) {
+      setState(() {
+        _paginas = [
+          _buildLibros(), // Mostrar todos los libros con imágenes dinámicas
+          _buildNovedades(), // Novedades relevantes para autores (y lectores)
+          _buildRecomendaciones(), // Recomendaciones relevantes para autores (y lectores)
+          _buildGeneros(), // Géneros, relevantes para tendencias
+        ];
+        _isPageContentInitialized = true; // Marca que el contenido de las páginas está listo
       });
     }
   }
 
+  // Obtiene *todos* los libros del catálogo desde Firestore.
+  // Esta función reemplaza a _fetchAuthorBooks para mostrar el catálogo completo.
+  Future<void> _fetchAllBooks() async {
+    setState(() {
+      _isLoadingBooks = true;
+      _booksError = null;
+    });
+    try {
+      // Llama a FirestoreService para obtener todos los libros publicados,
+      // sin filtrar por un autor específico, ya que esta vista es para ver el catálogo general.
+      final fetchedBooks = await FirestoreService().getAllBooks();
+      if (mounted) {
+        setState(() {
+          _books = fetchedBooks;
+          _isLoadingBooks = false;
+        });
+      }
+    } catch (e) {
+      print("Error al cargar libros del catálogo: $e");
+      if (mounted) {
+        setState(() {
+          _booksError = 'No se pudieron cargar los libros del catálogo. Intenta de nuevo más tarde.';
+          _isLoadingBooks = false;
+        });
+      }
+    }
+  }
+
   void _onItemTapped(int index) {
-    // Aquí el índice 0 es el catálogo principal, y los demás son navegaciones.
-    // El ítem "Agregar" es el índice 2 en el BottomNavigationBar.
-    if (index == 1) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => BuscarA()));
-    } else if (index == 2) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => AgregarA())); // Opción para agregar libro
-    } else if (index == 3) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => BibliotecaA())); // Biblioteca del autor
-    } else if (index == 4) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => PerfilA()));
-    } else {
-      setState(() {
-        _selectedIndex = index;
-      });
+    if (_selectedIndex == index) return;
+
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0: // Catálogo (current page)
+        break;
+      case 1: // BuscarA
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const BuscarA()));
+        break;
+      case 2: // AgregarA (Opción específica de autor)
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AgregarA()));
+        break;
+      case 3: // BibliotecaA
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const BibliotecaA()));
+        break;
+      case 4: // PerfilA
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PerfilA()));
+        break;
     }
   }
 
@@ -108,121 +134,149 @@ class _CatalogoAState extends State<CatalogoA> {
     });
   }
 
-  // Mostrar libros con imágenes cargadas dinámicamente para el autor
+  // Widget para mostrar los libros con imágenes cargadas dinámicamente
   Widget _buildLibros() {
-    return FutureBuilder<void>(
-      future: _bookCoverUrls.isEmpty ? _fetchAuthorBookCovers() : Future.value(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting && _bookCoverUrls.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error al cargar tus libros: ${snapshot.error}'));
-        } else if (_bookCoverUrls.isEmpty) {
-          return const Center(child: Text('Aún no has subido ningún libro.'));
-        } else {
-          return GridView.builder(
-            padding: const EdgeInsets.all(10),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3, // 3 libros por fila
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 0.65, // Ajusta la relación de aspecto (ancho/alto) de los ítems
-            ),
-            itemCount: _bookCoverUrls.length,
-            itemBuilder: (context, index) {
-              final imageUrl = _bookCoverUrls[index];
-              return GestureDetector(
-                onTap: () {
-                  // Cuando se toque un libro, navega a ModuloLecA.
-                  // Podrías pasar la URL de la imagen u otros detalles del libro a ModuloLecA aquí.
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ModuloLecA(), // ¡CORREGIDO: Ahora llama a ModuloLecA!
-                      // Ejemplo de cómo pasar la URL si ModuloLecA la aceptara:
-                      // builder: (context) => ModuloLecA(bookImageUrl: imageUrl),
-                    ),
-                  );
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10), // Bordes redondeados
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.3),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                        offset: const Offset(0, 3), // Sombra para un efecto 3D
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect( // Recorta la imagen con los bordes redondeados
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                : null,
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        // Muestra un icono de error si la imagen no se carga
-                        print('Error al cargar imagen: $imageUrl - $error');
-                        return Container(
-                          color: Colors.grey[300],
-                          child: Icon(Icons.broken_image, size: 50, color: Colors.grey[600]),
-                        );
-                      },
-                    ),
-                  ),
+    if (_isLoadingBooks) {
+      return const Center(child: CircularProgressIndicator());
+    } else if (_booksError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 40),
+              const SizedBox(height: 10),
+              Text(
+                _booksError!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red, fontSize: 16),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _fetchAllBooks, // Botón para reintentar la carga del catálogo completo
+                child: const Text('Reintentar Carga'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (_books.isEmpty) {
+      return const Center(child: Text('No hay libros disponibles en el catálogo en este momento.', style: TextStyle(fontSize: 16, color: Colors.grey)));
+    } else {
+      return GridView.builder(
+        padding: const EdgeInsets.all(10),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3, // 3 libros por fila
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 0.65, // Ajusta la relación de aspecto (ancho/alto) de los ítems
+        ),
+        itemCount: _books.length,
+        itemBuilder: (context, index) {
+          final book = _books[index];
+          // Asume que 'portadaUrlPublica' es la propiedad para la URL de la portada pública de cualquier libro.
+          final imageUrl = book['portadaUrlPublica'] as String?;
+
+          return GestureDetector(
+            onTap: () {
+              // Cuando se toque un libro, navega a ModuloLecA.
+              // Pasa los datos COMPLETO del libro para que ModuloLecA pueda mostrar el título, descripción, etc.
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ModuloLecA(bookData: book), // Pasa el mapa completo del libro
                 ),
               );
             },
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10), // Bordes redondeados
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: const Offset(0, 3), // Sombra para un efecto 3D
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                // Recorta la imagen con los bordes redondeados
+                borderRadius: BorderRadius.circular(10),
+                child: imageUrl != null && imageUrl.isNotEmpty
+                    ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          // Muestra un icono de error si la imagen no se carga
+                          print('Error al cargar imagen: $imageUrl - $error');
+                          return Container(
+                            color: Colors.grey[300],
+                            child: Icon(Icons.broken_image, size: 50, color: Colors.grey[600]),
+                          );
+                        },
+                      )
+                    : Container( // Si no hay URL de imagen, muestra un placeholder
+                        color: Colors.grey[300],
+                        child: Center(
+                          child: Icon(Icons.book, size: 50, color: Colors.grey[600]),
+                        ),
+                      ),
+              ),
+            ),
           );
-        }
-      },
-    );
+        },
+      );
+    }
   }
 
-  // Novedades 🆕 (Podría mostrar novedades de otros autores, o tus propias novedades)
+  // Novedades para Autores (ej. noticias del gremio, nuevas herramientas)
+  // Se mantiene el contenido específico para autores, aunque se muestren todos los libros.
   static Widget _buildNovedades() {
-    return const Center(child: Text("Novedades para Autores 🆕", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)));
+    return const Center(child: Text("Novedades 🆕", style: TextStyle(fontSize: 16, color: Colors.grey)));
   }
 
-  // Recomendaciones 💡 (Podría ser recomendaciones para el autor, ej. sobre marketing)
+  // Recomendaciones para Autores (ej. consejos de escritura, marketing)
+  // Se mantiene el contenido específico para autores, aunque se muestren todos los libros.
   static Widget _buildRecomendaciones() {
-    return const Center(child: Text("Recomendaciones para Autores 💡", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)));
+    return const Center(child: Text("Recomendaciones 💡", style: TextStyle(fontSize: 16, color: Colors.grey)));
   }
-
-  // Géneros con ExpansionTile (Relevante para ver qué géneros son populares)
+  
+  // Géneros con ExpansionTile (Relevante para que los autores vean tendencias)
+  // Se mantiene el contenido específico para autores, aunque se muestren todos los libros.
   static Widget _buildGeneros() {
     return ListView(
       children: <Widget>[
         ExpansionTile(
-          title: const Text("Ficción ", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          title: const Text("Ficción", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff2E4D4D))),
           leading: const Text("📚", style: TextStyle(fontSize: 24)),
           children: const <Widget>[
-            ListTile(title: Text("Novelas")),
-            ListTile(title: Text("Cuentos Cortos")),
-            ListTile(title: Text("Literatura Contemporánea")),
+            ListTile(title: Text("Novelas", style: TextStyle(color: Colors.grey))),
+            ListTile(title: Text("Cuentos Cortos", style: TextStyle(color: Colors.grey))),
+            ListTile(title: Text("Literatura Contemporánea", style: TextStyle(color: Colors.grey))),
           ],
         ),
         ExpansionTile(
-          title: const Text("No Ficción ", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          title: const Text("No Ficción", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff2E4D4D))),
           leading: const Text("📂", style: TextStyle(fontSize: 24)),
           children: const <Widget>[
-            ListTile(title: Text("Biografías")),
-            ListTile(title: Text("Historia")),
-            ListTile(title: Text("Ciencias")),
+            ListTile(title: Text("Biografías", style: TextStyle(color: Colors.grey))),
+            ListTile(title: Text("Historia", style: TextStyle(color: Colors.grey))),
+            ListTile(title: Text("Ciencias", style: TextStyle(color: Colors.grey))),
           ],
         ),
-        // Puedes añadir más géneros aquí
+        // Puedes añadir más géneros relevantes para autores aquí (ej. Autoayuda, Negocios)
       ],
     );
   }
@@ -232,7 +286,7 @@ class _CatalogoAState extends State<CatalogoA> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Catálogo de Autor", // Título ajustado para autores
+          "Catálogo", // Título ajustado para autores (ahora muestra el catálogo general)
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -251,7 +305,20 @@ class _CatalogoAState extends State<CatalogoA> {
             );
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications), // Icono de campana
+            color: Colors.white, // Color blanco
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificacionesA()), // Navega a NotificacionesA.dart
+              );
+            },
+          ),
+        ],
       ),
+      // --- Inicio del Drawer (Menú lateral) ---
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -269,83 +336,114 @@ class _CatalogoAState extends State<CatalogoA> {
                 ),
               ),
             ),
-            // Opciones específicas para autores
+            // Opciones específicas para autores (se mantienen)
             ListTile(
               title: const Text('Publicar Libro'),
+              leading: const Icon(Icons.add_circle_outline),
               onTap: () {
-                Navigator.pop(context);
-                // Navegar a la página para agregar/publicar un libro
+                Navigator.pop(context); // Cierra el drawer
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const AgregarA()));
               },
             ),
             ListTile(
               title: const Text('Mis Estadísticas'),
+              leading: const Icon(Icons.insights),
+              onTap: () {
+                Navigator.pop(context); // Cierra el drawer
+                print("Navegar a Mis Estadísticas de Autor");
+                // TODO: Navegar a una página de estadísticas del autor
+              },
+            ),
+            // Opciones generales que también son relevantes para autores
+            ListTile(
+              title: const Text('Plan de Suscripción'),
+              leading: const Icon(Icons.subscriptions),
               onTap: () {
                 Navigator.pop(context);
-                print("Mis Estadísticas");
-                // Navegar a una página de estadísticas del autor
+                print("Plan de Suscripción");
+                // TODO: Navegar a la página del plan de suscripción
+              },
+            ),
+            ListTile(
+              title: const Text('Foros'),
+              leading: const Icon(Icons.forum),
+              onTap: () {
+                Navigator.pop(context);
+                print("Foros");
+                // TODO: Navegar a la página de foros
               },
             ),
             ListTile(
               title: const Text('Configuración'),
+              leading: const Icon(Icons.settings),
               onTap: () {
-                Navigator.pop(context);
-                print("Configuración");
+                Navigator.pop(context); // Close the drawer
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const Configuracion()));
               },
             ),
+            const Divider(), // Divisor visual
             ListTile(
               title: const Text('Cerrar sesión'),
+              leading: const Icon(Icons.logout),
               onTap: () async {
                 await AuthService().signOut();
-                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const SingIn()),
-                  (route) => false,
-                );
+                if (mounted) {
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const SingIn()),
+                    (route) => false,
+                  );
+                }
               },
             ),
           ],
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+      // --- Fin del Drawer ---
+      body: _isPageContentInitialized // Muestra un indicador de carga si las páginas no están listas
+          ? Column(
               children: [
-                _buildIconTab(Icons.book, "Mis Libros", 0), // Texto ajustado
-                _buildIconTab(Icons.fiber_new, "Novedades", 1),
-                _buildIconTab(Icons.lightbulb, "Recomendaciones", 2),
-                _buildIconTab(Icons.category, "Géneros", 3),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildIconTab(Icons.book, "Catálogo General", 0), // Texto ajustado para reflejar que es el catálogo completo
+                      _buildIconTab(Icons.fiber_new, "Novedades", 1),
+                      _buildIconTab(Icons.lightbulb, "Recomendaciones", 2),
+                      _buildIconTab(Icons.category, "Géneros", 3),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _paginaActual = index;
+                      });
+                    },
+                    children: _paginas,
+                  ),
+                ),
               ],
-            ),
-          ),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _paginaActual = index;
-                });
-              },
-              children: _paginas,
-            ),
-          ),
-        ],
-      ),
+            )
+          : const Center(child: CircularProgressIndicator()), // Indicador de carga central
+      // --- Inicio del BottomNavigationBar ---
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: const Color(0xff2E4D4D),
-        unselectedItemColor: Colors.grey,
         backgroundColor: const Color(0xff2E4D4D),
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.grey[400],
+        type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catálogo'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
-          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Agregar'), // Nuevo ítem para autores
-          BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Mis Libros'), // Cambiado de 'Biblioteca'
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Agregar'), // Para que el autor agregue libros
+          BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Biblioteca'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
       ),
+      // --- Fin del BottomNavigationBar ---
     );
   }
 

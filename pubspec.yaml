@@ -42,3 +42,16 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+assets:
+  - assets/Profile_pics:
+    - Profile_1.png
+    - Profile_2.png
+    - Profile_3.png
+    - Profile_4.png
+    - Profile_5.png
+    - Profile_6.png
+    - Profile_7.png
+    - Profile_8.png
+    - Profile_9.png
+    - Profile_10.png

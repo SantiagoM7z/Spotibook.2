@@ -4,6 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Buscar.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Biblioteca.dart';
+import 'package:spotibook2/Pages/Index/Lectores/Notificaciones.dart';
+import 'package:spotibook2/Pages/Index/Settings/Configuracion.dart';
+import 'package:spotibook2/Pages/Inicio/SingIn.dart';
+import 'package:spotibook2/Services/Auth_Service.dart';
 
 class Perfil extends StatefulWidget {
   const Perfil({super.key});
@@ -13,7 +17,7 @@ class Perfil extends StatefulWidget {
 }
 
 class _PerfilState extends State<Perfil> {
-  int _selectedIndex = 3;
+  int _selectedIndex = 3; 
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -23,33 +27,53 @@ class _PerfilState extends State<Perfil> {
   final TextEditingController _contrasenaController = TextEditingController();
   final TextEditingController _confirmContrasenaController = TextEditingController();
 
-  String imageUrl = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+  String? _selectedProfileImagePath; 
+  final List<String> _profileImages = [
+    'assets/Profile_pics/profile_1.png',
+    'assets/Profile_pics/profile_2.png',
+    'assets/Profile_pics/profile_3.png',
+    'assets/Profile_pics/profile_4.png',
+    'assets/Profile_pics/profile_5.png',
+    'assets/Profile_pics/profile_6.png',
+    'assets/Profile_pics/profile_7.png',
+    'assets/Profile_pics/profile_8.png',
+    'assets/Profile_pics/profile_9.png',
+    'assets/Profile_pics/profile_10.png',
+  ];
+
+  String? _currentUserType; 
+  String? _selectedUserType; 
+
 
   @override
   void initState() {
     super.initState();
     _cargarDatosUsuario();
-    _contrasenaController.text = ''; // Campo contraseña vacío
+    _contrasenaController.text = ''; 
     _confirmContrasenaController.text = '';
   }
 
   void _cargarDatosUsuario() async {
     final user = _auth.currentUser;
     if (user != null) {
-      DocumentSnapshot userDoc = await _firestore.collection('usuarios').doc(user.uid).get();
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
 
       if (userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>; 
         setState(() {
-          // Si Firebase Auth tiene nombre, úsalo, sino usa Firestore
-          _nombreController.text = user.displayName ?? (userDoc['nombre'] ?? '');
+          _nombreController.text = userData['username'] ?? user.displayName ?? '';
           _correoController.text = user.email ?? '';
-          imageUrl = userDoc['imagen'] ?? imageUrl;
+          _selectedProfileImagePath = userData['profilePictureUrl'] ?? _profileImages[0];
+          _currentUserType = userData['userType'] ?? 'Lector'; 
+          _selectedUserType = _currentUserType; 
         });
       } else {
-        // Si no existe doc en Firestore, usa Firebase Auth solo
         setState(() {
           _nombreController.text = user.displayName ?? '';
           _correoController.text = user.email ?? '';
+          _selectedProfileImagePath = _profileImages[0]; 
+          _currentUserType = 'Lector'; 
+          _selectedUserType = _currentUserType;
         });
       }
     }
@@ -57,126 +81,391 @@ class _PerfilState extends State<Perfil> {
 
   void _guardarCambios() async {
     final user = _auth.currentUser;
-    if (user != null) {
-      final newPassword = _contrasenaController.text.trim();
-      final confirmPassword = _confirmContrasenaController.text.trim();
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay usuario autenticado.')),
+      );
+      return;
+    }
 
-      // Validar que si una de las dos no está vacía, ambas coincidan
-      if (newPassword.isNotEmpty || confirmPassword.isNotEmpty) {
-        if (newPassword != confirmPassword) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Las contraseñas no coinciden')),
-          );
-          return;
-        }
+    final newPassword = _contrasenaController.text.trim();
+    final confirmPassword = _confirmContrasenaController.text.trim();
+
+    if (newPassword.isNotEmpty || confirmPassword.isNotEmpty) {
+      if (newPassword != confirmPassword) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Las contraseñas no coinciden.')),
+        );
+        return;
       }
+      if (newPassword.length < 8) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('La contraseña debe tener al menos 8 caracteres.')),
+        );
+        return;
+      }
+    }
 
-      try {
-        // Actualizar nombre en Firebase Authentication
+    try {
+      if (_nombreController.text.isNotEmpty && user.displayName != _nombreController.text) {
         await user.updateDisplayName(_nombreController.text);
-        await user.reload(); // Refrescar usuario
-
-        // Actualizar nombre e imagen en Firestore
-        await _firestore.collection('usuarios').doc(user.uid).set({
-          'nombre': _nombreController.text,
-          'imagen': imageUrl,
-          'correo': _correoController.text,
-        }, SetOptions(merge: true));
-
-        // Actualizar contraseña si fue escrita
-        if (newPassword.isNotEmpty) {
-          await user.updatePassword(newPassword);
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cambios guardados correctamente')),
-        );
-
-        _contrasenaController.clear();
-        _confirmContrasenaController.clear();
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar cambios: $e')),
-        );
       }
+
+      if (newPassword.isNotEmpty) {
+        await user.updatePassword(newPassword);
+      }
+
+      Map<String, dynamic> updateData = {
+        'username': _nombreController.text,
+        'profilePictureUrl': _selectedProfileImagePath,
+      };
+
+      if (_currentUserType == 'Lector' && _selectedUserType == 'Autor') {
+        updateData['userType'] = 'Autor';
+        print("Tipo de usuario actualizado de Lector a Autor para ${user.uid}");
+      }
+
+      await _firestore.collection('users').doc(user.uid).set(updateData, SetOptions(merge: true));
+
+      await user.reload(); 
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('¡Cambios guardados correctamente!')),
+      );
+
+      _contrasenaController.clear();
+      _confirmContrasenaController.clear();
+
+      _cargarDatosUsuario();
+
+    } catch (e) {
+      print("Error al guardar cambios: $e"); 
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar cambios: ${e.toString()}')),
+      );
     }
   }
 
   void _onItemTapped(int index) {
-    if (index == 0) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => Catalogo()));
-    } else if (index == 2) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => Buscar()));
-    } else if (index == 3) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => Biblioteca()));
-    } else {
+    if (_selectedIndex == index) return; 
+
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => Catalogo()));
+        break;
+      case 1:
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => Buscar()));
+        break;
+      case 2:
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => Biblioteca()));
+        break;
+      case 3:
+        break;
+    }
+  }
+
+  Future<void> _mostrarSelectorImagenPerfil() async {
+    final selectedImage = await showModalBottomSheet<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Selecciona tu foto de perfil',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 100, 
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _profileImages.length,
+                  itemBuilder: (context, index) {
+                    final imagePath = _profileImages[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context, imagePath); 
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: CircleAvatar(
+                          radius: 40,
+                          backgroundImage: AssetImage(imagePath),
+                          backgroundColor: _selectedProfileImagePath == imagePath
+                              ? const Color(0xff2E4D4D).withOpacity(0.5) 
+                              : Colors.grey[300],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context), 
+                child: const Text('Cancelar'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selectedImage != null) {
       setState(() {
-        _selectedIndex = index;
+        _selectedProfileImagePath = selectedImage;
       });
     }
   }
 
-  Future<void> _seleccionarImagen() async {
-    // Aquí puedes implementar la selección y subida de imagen
-    setState(() {
-      imageUrl = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-    });
+  Future<void> _mostrarDialogoCambiarNombre() async {
+    TextEditingController tempNameController = TextEditingController(text: _nombreController.text);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Cambiar Nombre de Usuario'),
+          content: TextField(
+            controller: tempNameController,
+            decoration: const InputDecoration(labelText: 'Nuevo Nombre de Usuario'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _nombreController.text = tempNameController.text;
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _mostrarDialogoCambiarTipoUsuario() async {
+    if (_currentUserType == 'Autor') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ya eres un autor. No puedes cambiar tu tipo de usuario.')),
+      );
+      return;
+    }
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Cambiar Tipo de Usuario'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('¿Deseas cambiar tu tipo de usuario a "Autor"?'),
+              if (_currentUserType == 'Lector') 
+                RadioListTile<String>(
+                  title: const Text('Autor'),
+                  value: 'Autor',
+                  groupValue: _selectedUserType,
+                  onChanged: (String? value) {
+                    setState(() {
+                      _selectedUserType = value;
+                    });
+                    Navigator.pop(context); 
+                  },
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancelar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Perfil"),
+        title: const Text(
+          "Perfil",
+          style: TextStyle(color: Colors.white), 
+        ),
         backgroundColor: const Color(0xff2E4D4D),
+        iconTheme: const IconThemeData(color: Colors.white), 
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications), 
+            color: Colors.white, 
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const Notificaciones()),
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
-        child: Column(
-          children: [
-            GestureDetector(
-              onTap: _seleccionarImagen,
-              child: Center(
+        child: SingleChildScrollView( 
+          child: Column(
+            children: [
+              Center(
                 child: CircleAvatar(
                   radius: 50,
-                  backgroundImage: NetworkImage(imageUrl),
+                  backgroundImage: _selectedProfileImagePath != null
+                      ? AssetImage(_selectedProfileImagePath!)
+                      : const NetworkImage('https://cdn-icons-png.flaticon.com/512/149/149071.png') as ImageProvider,
                   backgroundColor: Colors.grey[300],
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _nombreController,
-              decoration: const InputDecoration(labelText: "Nombre de Usuario"),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  const Text("Correo: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(_correoController.text),
-                ],
+              // Nuevo TextButton para cambiar la imagen de perfil
+              TextButton(
+                onPressed: _mostrarSelectorImagenPerfil,
+                child: const Text("Cambiar foto de perfil"),
+              ),
+              const SizedBox(height: 20), // Ajusta el espacio según sea necesario
+
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    const Text("Nombre de Usuario: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Expanded(child: Text(_nombreController.text)),
+                    TextButton(
+                      onPressed: _mostrarDialogoCambiarNombre,
+                      child: const Text("Cambiar"),
+                    ),
+                  ],
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    const Text("Correo: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Expanded(child: Text(_correoController.text)),
+                  ],
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    const Text("Tipo de Usuario: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Expanded(child: Text(_currentUserType ?? 'Cargando...')), 
+                    TextButton(
+                      onPressed: _mostrarDialogoCambiarTipoUsuario,
+                      child: const Text("Cambiar"),
+                    ),
+                  ],
+                ),
+              ),
+
+              TextField(
+                controller: _contrasenaController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: "Nueva Contraseña"),
+              ),
+              TextField(
+                controller: _confirmContrasenaController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: "Confirmar Nueva Contraseña"),
+              ),
+              
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: _guardarCambios,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xff2E4D4D),
+                  foregroundColor: Colors.white, 
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                ),
+                child: const Text("Guardar Cambios", style: TextStyle(fontSize: 16)),
+              ),
+            ],
+          ),
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Color(0xff2E4D4D),
+              ),
+              child: Text(
+                'Menú',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            TextField(
-              controller: _contrasenaController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: "Nueva Contraseña"),
+            ListTile(
+              title: const Text('Plan de Suscripción'),
+              leading: const Icon(Icons.subscriptions),
+              onTap: () {
+                Navigator.pop(context);
+                print("Plan de Suscripción");
+                // TODO: Navegar a la página del plan de suscripción
+              },
             ),
-            TextField(
-              controller: _confirmContrasenaController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: "Confirmar Nueva Contraseña"),
+            ListTile(
+              title: const Text('Foros'),
+              leading: const Icon(Icons.forum),
+              onTap: () {
+                Navigator.pop(context);
+                print("Foros");
+                // TODO: Navegar a la página de foros
+              },
             ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: _guardarCambios,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xff2E4D4D),
-                shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-              ),
-              child: const Text("Guardar Cambios", style: TextStyle(fontSize: 16)),
+            ListTile(
+              title: const Text('Configuración'),
+              leading: const Icon(Icons.settings),
+              onTap: () {
+                Navigator.pop(context); // Close the drawer
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const Configuracion())); // Navigate to Configuracion
+              },
+            ),
+            const Divider(), // Divisor visual
+            ListTile(
+              title: const Text('Cerrar sesión'),
+              leading: const Icon(Icons.logout),
+              onTap: () async {
+                await AuthService().signOut();
+                if (mounted) { // Asegura que el widget sigue montado
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const SingIn()),
+                    (route) => false,
+                  );
+                }
+              },
             ),
           ],
         ),
@@ -185,10 +474,11 @@ class _PerfilState extends State<Perfil> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         backgroundColor: const Color(0xff2E4D4D),
-        selectedItemColor: const Color(0xff2E4D4D),
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: Colors.white, 
+        unselectedItemColor: Colors.grey[400], 
+        type: BottomNavigationBarType.fixed, 
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catalogo'),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catálogo'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
           BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Biblioteca'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),

@@ -13,6 +13,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spotibook2/Pages/Index/Administradores/Verificaciones.dart';
 import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
+import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -132,8 +133,10 @@ class Spotibook extends StatelessWidget {
         }
         if (snapshot.data == "Admin") {
           return Verificaciones();
-        } else if (snapshot.data == "Lector" || snapshot.data == "Autor") {
+        } else if (snapshot.data == "Lector"){
           return Catalogo();
+        } else if (snapshot.data == "Autor") {
+          return CatalogoA();
         } else {
           return BibliotecaE();
         }

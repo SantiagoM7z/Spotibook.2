@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:spotibook2/Pages/Suport/TermsYCond.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
 import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
+import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
 
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Services/firestore_service.dart';
@@ -20,13 +21,11 @@ class SingUp extends StatefulWidget {
 class _SingUpState extends State<SingUp> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers Generales
   TextEditingController correoController = TextEditingController();
   TextEditingController nombreController = TextEditingController();
   TextEditingController contraseniaController = TextEditingController();
   TextEditingController confirmContraseniaController = TextEditingController();
 
-  // Controllers para Editorial
   TextEditingController nombreLegalController = TextEditingController();
   TextEditingController rfcController = TextEditingController();
   TextEditingController direccionController = TextEditingController();
@@ -36,34 +35,53 @@ class _SingUpState extends State<SingUp> {
   List<TextEditingController> codigoControllers = List.generate(6, (_) => TextEditingController());
   bool isCodigoValido = false;
 
-  // Validación del formulario
+  final List<String> _profileImages = [
+    'assets/Profile_pics/profile_1.png',
+    'assets/Profile_pics/profile_2.png',
+    'assets/Profile_pics/profile_3.png',
+    'assets/Profile_pics/profile_4.png',
+    'assets/Profile_pics/profile_5.png',
+    'assets/Profile_pics/profile_6.png',
+    'assets/Profile_pics/profile_7.png',
+    'assets/Profile_pics/profile_8.png',
+    'assets/Profile_pics/profile_9.png',
+    'assets/Profile_pics/profile_10.png',
+  ];
+
+  String? _selectedProfileImagePath;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedProfileImagePath = _profileImages[0];
+  }
+
   void _validateForm() {
     setState(() {
-      isformvalid = _formKey.currentState!.validate() && ischecked;
+      isformvalid = _formKey.currentState!.validate() && ischecked && _selectedProfileImagePath != null;
     });
   }
 
-  // ** Función de validación del RFC **
+  // * Función de validación del RFC 
   bool esRFCDeEmpresa(String rfc) {
     final regex = RegExp(r'^[A-ZÑ&]{3}\d{6}[A-Z0-9]{3}$');
     return regex.hasMatch(rfc.toUpperCase());
   }
 
-  // Mostrar AlertDialog para el código de verificación
   void _mostrarDialogoCodigoVerificacion(String userId, int codigoVerificacion) {
-    final mainContext = context; // Contexto padre para navegación segura
-    
+    final mainContext = context; 
+
     showDialog(
       context: mainContext,
       builder: (contextDialog) {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text("Ingresa el código de verificación"),
+              title: const Text("Ingresa el código de verificación"),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text("Ingresa el código que te enviamos por correo"),
+                  const Text("Ingresa el código que te enviamos por correo"),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(6, (index) {
@@ -74,7 +92,7 @@ class _SingUpState extends State<SingUp> {
                           keyboardType: TextInputType.number,
                           maxLength: 1,
                           textAlign: TextAlign.center,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             hintText: '-',
                             counterText: "",
                             border: OutlineInputBorder(),
@@ -88,9 +106,9 @@ class _SingUpState extends State<SingUp> {
                       );
                     }),
                   ),
-                  if (!isCodigoValido)
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
+                  if (!isCodigoValido && codigoControllers.any((controller) => controller.text.isNotEmpty)) 
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
                       child: Text(
                         "El código está mal. Verifica los números.",
                         style: TextStyle(color: Colors.red),
@@ -99,7 +117,6 @@ class _SingUpState extends State<SingUp> {
                 ],
               ),
               actions: <Widget>[
-                // Botón para verificar el código
                 ElevatedButton(
                   onPressed: isCodigoValido ? () async {
                     String codigoIngresado = codigoControllers.map((e) => e.text).join();
@@ -111,7 +128,6 @@ class _SingUpState extends State<SingUp> {
                     if (verificacionDoc.exists) {
                       final storedCodigo = verificacionDoc['codigo'].toString();
                       if (codigoIngresado == storedCodigo) {
-                        // Si el código es correcto, actualizamos el estado del usuario
                         await FirebaseFirestore.instance.collection('users').doc(userId).update({
                           'verificado': true,
                         });
@@ -121,21 +137,25 @@ class _SingUpState extends State<SingUp> {
                         });
 
                         ScaffoldMessenger.of(mainContext).showSnackBar(
-                          SnackBar(content: Text("¡Cuenta verificada con éxito!"))
+                          const SnackBar(content: Text("¡Cuenta verificada con éxito!"))
                         );
 
-                        // Cerrar el diálogo primero
                         Navigator.of(contextDialog).pop();
 
-                        // Navegar usando el contexto principal
                         if (widget.UserType == 'Editorial') {
                           Navigator.pushReplacement(
-                            mainContext, 
+                            mainContext,
                             MaterialPageRoute(builder: (context) => BibliotecaE())
                           );
-                        } else {
+                        } else if (widget.UserType == 'Autor') {
                           Navigator.pushReplacement(
-                            mainContext, 
+                            mainContext,
+                            MaterialPageRoute(builder: (context) => CatalogoA())
+                          );
+                        }
+                        else {
+                          Navigator.pushReplacement(
+                            mainContext,
                             MaterialPageRoute(builder: (context) => Catalogo())
                           );
                         }
@@ -144,17 +164,17 @@ class _SingUpState extends State<SingUp> {
                           isCodigoValido = false;
                         });
                         ScaffoldMessenger.of(mainContext).showSnackBar(
-                          SnackBar(content: Text("Código incorrecto, por favor verifica los números."))
+                          const SnackBar(content: Text("Código incorrecto, por favor verifica los números."))
                         );
                       }
                     }
                   } : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isformvalid ? const Color(0xff2E4D4D) : Colors.grey,
+                    backgroundColor: isCodigoValido ? const Color(0xff2E4D4D) : Colors.grey, 
+                    foregroundColor: Colors.white, 
                   ),
-                  child: Text("Verificar"),
+                  child: const Text("Verificar"),
                 ),
-                // Botón para reenviar el código
                 TextButton(
                   onPressed: () async {
                     final nuevoCodigoVerificacion = generarCodigoVerificacion();
@@ -171,10 +191,10 @@ class _SingUpState extends State<SingUp> {
                     );
 
                     ScaffoldMessenger.of(mainContext).showSnackBar(
-                      SnackBar(content: Text("Código Reenviado al Correo."))
+                      const SnackBar(content: Text("Código Reenviado al Correo."))
                     );
                   },
-                  child: Text("Reenviar Código"),
+                  child: const Text("Reenviar Código"),
                 ),
               ],
             );
@@ -190,7 +210,7 @@ class _SingUpState extends State<SingUp> {
       appBar: AppBar(
         title: Text(
           "Registrarse como ${widget.UserType}",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xff2E4D4D),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -204,11 +224,12 @@ class _SingUpState extends State<SingUp> {
     );
   }
 
-  // Widget de los campos del formulario
+  // * Widget de los campos del formulario
   Widget cuerpo(String tipoUsuario) {
     return Container(
       child: Center(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 20.0), 
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -223,6 +244,7 @@ class _SingUpState extends State<SingUp> {
                 telefono(),
               ],
               UserTypeField(tipoUsuario),
+              _buildProfilePictureSelector(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -238,7 +260,7 @@ class _SingUpState extends State<SingUp> {
                   const Text("Acepto los"),
                   TextButton(
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => TermsYCond()));
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsYCond()));
                     },
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xff2E4D4D),
@@ -248,59 +270,143 @@ class _SingUpState extends State<SingUp> {
                   ),
                 ],
               ),
+              const SizedBox(height: 20), 
               ElevatedButton(
                 onPressed: isformvalid ? () async {
                   final email = correoController.text;
                   final username = nombreController.text;
                   final contrasenia = contraseniaController.text;
                   final userType = widget.UserType;
+                  final profilePicture = _selectedProfileImagePath; 
 
-                  // Registrar usuario en Firebase
+                  if (profilePicture == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Por favor, selecciona una foto de perfil."))
+                    );
+                    return;
+                  }
+
+                  // * Registrar usuario en Firebase
                   final user = await AuthService().registerWithEmailPassword(email, contrasenia);
                   if (user != null) {
-                    // Llamada a Firestore para guardar el usuario
                     if (userType == 'Editorial') {
-                      await FirestoreService().saveEditorial(
-                        user, 
-                        nombreLegalController.text, 
-                        rfcController.text, 
-                        direccionController.text, 
-                        telefonoController.text, 
-                        username
+                      await FirestoreService().saveEditorialExtended( 
+                        user,
+                        nombreLegalController.text,
+                        rfcController.text,
+                        direccionController.text,
+                        telefonoController.text,
+                        username,
+                        profilePicture, 
                       );
                     } else {
-                      await FirestoreService().saveUser(user, username, userType);
+                      await FirestoreService().saveUser(
+                        user,
+                        username,
+                        userType,
+                        profilePicture,
+                      );
                     }
 
-                    // Generar el código de verificación
                     final codigoVerificacion = generarCodigoVerificacion();
 
-                    // Enviar el correo de verificación
+                    // * Enviar el correo de verificación
                     await enviarCorreoVerificacion(
                       destinatario: user.email!,
                       username: username,
                       codigoVerificacion: codigoVerificacion.toString(),
                     );
 
-                    // Guardar el código de verificación en Firestore
                     await guardarCodigoVerificacion(user.uid, codigoVerificacion);
 
-                    // Mostrar el diálogo para ingresar el código
                     _mostrarDialogoCodigoVerificacion(user.uid, codigoVerificacion);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Error al Registrar"))
+                      const SnackBar(content: Text("Error al Registrar"))
                     );
                   }
                 } : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isformvalid ? const Color(0xff2E4D4D) : Colors.grey,
+                  foregroundColor: Colors.white, // Color del texto del botón
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                child: const Text("Registrarse", style: TextStyle(fontSize: 15, color: Colors.white)),
+                child: const Text("Registrarse", style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // * Widget para el selector de fotos de perfil
+  Widget _buildProfilePictureSelector() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Selecciona tu foto de perfil:",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xff2E4D4D)),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 90, 
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _profileImages.length,
+              itemBuilder: (context, index) {
+                final imagePath = _profileImages[index];
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedProfileImagePath = imagePath;
+                      _validateForm(); 
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: _selectedProfileImagePath == imagePath
+                              ? const Color(0xff2E4D4D) 
+                              : Colors.grey[300],
+                          child: CircleAvatar(
+                            radius: 38,
+                            backgroundImage: AssetImage(imagePath),
+                            onBackgroundImageError: (exception, stackTrace) {
+                              debugPrint('Error loading image $imagePath: $exception');
+                            },
+                          ),
+                        ),
+                        if (_selectedProfileImagePath == imagePath)
+                          const Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                            size: 24.0,
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          if (_selectedProfileImagePath == null)
+            const Padding(
+              padding: EdgeInsets.only(top: 8.0),
+              child: Text(
+                "Por favor, selecciona una foto de perfil.",
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -313,14 +419,14 @@ class _SingUpState extends State<SingUp> {
 
   Widget nombre() => campoTexto("Nombre de Usuario", nombreController, TextInputType.text, true);
 
-  Widget contrasenia() => campoTexto("Contraseña", contraseniaController, TextInputType.visiblePassword, true, 
+  Widget contrasenia() => campoTexto("Contraseña", contraseniaController, TextInputType.visiblePassword, true,
     obscure: true, validator: (value) {
       if (value == null || value.isEmpty) return "Contraseña obligatoria";
       if (value.length < 8) return "Debe tener mínimo 8 caracteres";
       return null;
     });
 
-  Widget confirmcontrasenia() => campoTexto("Confirme la contraseña", confirmContraseniaController, 
+  Widget confirmcontrasenia() => campoTexto("Confirme la contraseña", confirmContraseniaController,
     TextInputType.visiblePassword, true, obscure: true, validator: (value) {
       if (value == null || value.isEmpty) return "Confirme la contraseña";
       if (value != contraseniaController.text) return "Las contraseñas no coinciden";
@@ -336,15 +442,16 @@ class _SingUpState extends State<SingUp> {
     true,
     validator: (value) {
       if (value == null || value.isEmpty) return "El RFC es obligatorio";
-      if (!esRFCDeEmpresa(value)) {
-        return "RFC inválido. Debe tener 12 caracteres (3 letras, 6 números, 3 letras/números)";
+      final regex = RegExp(r'^[A-ZÑ&]{3}\d{6}[A-Z0-9]{3}$');
+      if (!regex.hasMatch(value.toUpperCase())) {
+        return "RFC inválido. Ej. EMP900101ABC";
       }
       return null;
     },
   );
 
   Widget direccion() => campoTexto("Dirección de Oficinas", direccionController, TextInputType.text, true);
-  
+
   Widget telefono() => campoTexto("Teléfono de Contacto", telefonoController, TextInputType.phone, true);
 
   Widget campoTexto(String hint, TextEditingController controller, TextInputType tipo, bool obligatorio,
@@ -359,6 +466,10 @@ class _SingUpState extends State<SingUp> {
           hintText: hint,
           fillColor: Colors.white,
           filled: true,
+          border: OutlineInputBorder( 
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
         ),
         validator: validator ?? (obligatorio
             ? (value) {
@@ -378,16 +489,21 @@ class _SingUpState extends State<SingUp> {
       child: TextFormField(
         controller: TextEditingController(text: tipoUsuario),
         readOnly: true,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           labelText: "Tipo de Usuario",
-          fillColor: Colors.white,
+          fillColor: Colors.grey[200],
           filled: true,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
         ),
       ),
     );
   }
 
   int generarCodigoVerificacion() {
+    // Genera un código de 6 dígitos
     return 100000 + (DateTime.now().millisecondsSinceEpoch % 900000);
   }
 

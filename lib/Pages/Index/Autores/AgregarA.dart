@@ -9,23 +9,26 @@ import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
 import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart';
 import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
 import 'package:spotibook2/Pages/Index/Autores/PerfilA.dart';
+import 'package:spotibook2/Pages/Index/Settings/Configuracion.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Services/firestore_service.dart';
-import 'package:spotibook2/Services/Dropbox_config.dart';
+import 'package:spotibook2/Services/DropboxConfig.dart';
 
 class AgregarA extends StatefulWidget {
-  const AgregarA({super.key});
+  final Map<String, dynamic>? bookToEdit;
+
+  const AgregarA({super.key, this.bookToEdit});
 
   @override
   State<AgregarA> createState() => _AgregarAState();
-} 
+}
 
 class _AgregarAState extends State<AgregarA> {
   final _formKey = GlobalKey<FormState>();
   final FirestoreService _firestoreService = FirestoreService();
   final DropboxService _dropboxService = DropboxService();
-  final int _selectedIndex = 2;
+  final int _selectedIndex = 2; // Asegúrate de que este índice sea el correcto para la navegación.
 
   // Controladores
   final TextEditingController tituloController = TextEditingController();
@@ -36,26 +39,29 @@ class _AgregarAState extends State<AgregarA> {
   // Estados
   bool isFormValid = false;
   bool isUploading = false;
-  String? imagePath;
-  String? filePath;
-  List<String> selectedTags = [];
-  List<Map<String, dynamic>> allTags = [];
+  String? imagePath; // Ruta del archivo de imagen recién seleccionada
+  String? filePath; // Ruta del archivo de libro recién seleccionado
+  String? _currentCoverImageUrl; // URL de la portada existente (si estamos editando)
+  String? _currentFileUrl; // URL del archivo de libro existente (si estamos editando)
+
+  List<String> selectedTags = []; // Almacena solo los IDs de las etiquetas seleccionadas
+  List<Map<String, dynamic>> allTags = []; // Almacena mapas con 'id' y 'nombre'
   String? fileError;
   String? imageError;
 
   void _onItemTapped(int index) {
     if (index == 0) {
       Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => const CatalogoA()));
+          context, MaterialPageRoute(builder: (context) => const CatalogoA()));
     } else if (index == 1) {
       Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => const BuscarA()));
+          context, MaterialPageRoute(builder: (context) => const BuscarA()));
     } else if (index == 3) {
       Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => const BibliotecaA()));
+          context, MaterialPageRoute(builder: (context) => const BibliotecaA()));
     } else if (index == 4) {
       Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => const PerfilA()));
+          context, MaterialPageRoute(builder: (context) => const PerfilA()));
     }
   }
 
@@ -63,6 +69,27 @@ class _AgregarAState extends State<AgregarA> {
   void initState() {
     super.initState();
     _loadTags();
+    // Inicializar campos si bookToEdit es provisto (modo edición)
+    if (widget.bookToEdit != null) {
+      tituloController.text = widget.bookToEdit!['titulo'] ?? '';
+      autorController.text = widget.bookToEdit!['autor'] ?? '';
+      editorialController.text = widget.bookToEdit!['editorial'] ?? '';
+      sinopsisController.text = widget.bookToEdit!['sinopsis'] ?? '';
+      // Asegúrate de que las etiquetas se manejen como List<String>
+      selectedTags = List<String>.from(widget.bookToEdit!['etiquetas'] ?? []);
+      // *** CAMBIO CLAVE: Leer de los campos de URL de revisión ***
+      _currentCoverImageUrl = widget.bookToEdit!['portadaUrlRevision'];
+      _currentFileUrl = widget.bookToEdit!['archivoUrlRevision'];
+    }
+  }
+
+  @override
+  void dispose() {
+    tituloController.dispose();
+    autorController.dispose();
+    editorialController.dispose();
+    sinopsisController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadTags() async {
@@ -71,6 +98,7 @@ class _AgregarAState extends State<AgregarA> {
       setState(() {
         allTags = tags;
       });
+      _validateForm(); // Validar formulario después de cargar las etiquetas
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -79,19 +107,28 @@ class _AgregarAState extends State<AgregarA> {
           duration: const Duration(seconds: 5),
         ),
       );
-      print("Error capturado en _loadTags de AgregarA: $e"); // Para la consola
+      print("Error capturado en _loadTags de AgregarA: $e");
     }
   }
 
   void _validateForm() {
+    // Es crucial llamar a setState aquí para que la UI se actualice
+    // y el botón de enviar se habilite/deshabilite correctamente.
     setState(() {
       isFormValid = _formKey.currentState?.validate() == true &&
           selectedTags.isNotEmpty &&
-          imagePath != null &&
-          filePath != null;
+          // Comprobar si se seleccionó una nueva imagen O si ya existe una URL de portada
+          (imagePath != null || (_currentCoverImageUrl != null && _currentCoverImageUrl!.isNotEmpty)) &&
+          // Comprobar si se seleccionó un nuevo archivo O si ya existe una URL de archivo
+          (filePath != null || (_currentFileUrl != null && _currentFileUrl!.isNotEmpty));
 
-      fileError = filePath == null ? "Debes subir un archivo PDF o EPUB" : null;
-      imageError = imagePath == null ? "Debes seleccionar una portada" : null;
+      // Actualizar mensajes de error visuales
+      imageError = (imagePath == null && (_currentCoverImageUrl == null || _currentCoverImageUrl!.isEmpty))
+          ? "Debes seleccionar una portada"
+          : null;
+      fileError = (filePath == null && (_currentFileUrl == null || _currentFileUrl!.isEmpty))
+          ? "Debes subir un archivo PDF o EPUB"
+          : null;
     });
   }
 
@@ -104,12 +141,13 @@ class _AgregarAState extends State<AgregarA> {
         setState(() {
           imagePath = pickedFile.path;
           imageError = null;
-          _validateForm();
+          _currentCoverImageUrl = null; // Borra la URL existente si seleccionamos una nueva imagen
+          _validateForm(); // Revalidar el formulario
         });
       }
     } catch (e) {
       setState(() {
-        imageError = "Error al seleccionar la imagen";
+        imageError = "Error al seleccionar la imagen: ${e.toString()}";
       });
       print("Error al seleccionar imagen: $e");
     }
@@ -134,19 +172,25 @@ class _AgregarAState extends State<AgregarA> {
         setState(() {
           filePath = result.files.single.path;
           fileError = null;
-          _validateForm();
+          _currentFileUrl = null; // Borra la URL existente si seleccionamos un nuevo archivo
+          _validateForm(); // Revalidar el formulario
         });
       }
     } catch (e) {
       setState(() {
-        fileError = "Error al seleccionar el archivo";
+        fileError = "Error al seleccionar el archivo: ${e.toString()}";
       });
       print("Error al seleccionar archivo: $e");
     }
   }
 
   Future<void> _submitForm() async {
-    if (!isFormValid) return;
+    if (!isFormValid) {
+      // Forzar la validación para mostrar los errores si el botón está deshabilitado.
+      _formKey.currentState?.validate();
+      _validateForm();
+      return;
+    }
 
     setState(() => isUploading = true);
 
@@ -154,8 +198,10 @@ class _AgregarAState extends State<AgregarA> {
       final confirm = await showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Solicitar Publicación'),
-          content: const Text('¿Estás seguro que deseas solicitar la publicación de este libro?'),
+          title: Text(widget.bookToEdit != null ? 'Confirmar Edición' : 'Solicitar Publicación'),
+          content: Text(widget.bookToEdit != null
+              ? '¿Estás seguro que deseas actualizar la información de este libro?'
+              : '¿Estás seguro que deseas solicitar la publicación de este libro?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -177,47 +223,83 @@ class _AgregarAState extends State<AgregarA> {
         return;
       }
 
-      // * Subir portada
-      final imageFile = File(imagePath!);
-      final imageName = 'portada_${DateTime.now().millisecondsSinceEpoch}${path.extension(imagePath!)}';
-      final imageUrl = await _dropboxService.uploadFile(imageFile, '/Revisión/$imageName');
+      String? finalImageUrl = _currentCoverImageUrl;
+      String? finalFileUrl = _currentFileUrl;
 
-      // * Subir archivo del libro
-      final bookFile = File(filePath!);
-      final bookName = 'libro_${DateTime.now().millisecondsSinceEpoch}${path.extension(filePath!)}';
-      final fileUrl = await _dropboxService.uploadFile(bookFile, '/Revisión/$bookName');
+      // Subir nueva imagen si se seleccionó una
+      if (imagePath != null) {
+        final imageFile = File(imagePath!);
+        final imageName =
+            'portada_revision_${DateTime.now().millisecondsSinceEpoch}${path.extension(imagePath!)}';
+        // Subir a la carpeta de Revisiones
+        finalImageUrl = await _dropboxService.uploadFile(imageFile, '/Revisiones/$imageName');
+      }
 
-      // * Guardar en Firestore
-      await _firestoreService.saveBook(
-        titulo: tituloController.text,
-        autor: autorController.text,
-        editorial: editorialController.text,
-        sinopsis: sinopsisController.text,
-        etiquetas: selectedTags,
-        portadaUrl: imageUrl,
-        archivoUrl: fileUrl,
-      );
+      // Subir nuevo archivo si se seleccionó uno
+      if (filePath != null) {
+        final bookFile = File(filePath!);
+        final bookName =
+            'libro_revision_${DateTime.now().millisecondsSinceEpoch}${path.extension(filePath!)}';
+        // Subir a la carpeta de Revisiones
+        finalFileUrl = await _dropboxService.uploadFile(bookFile, '/Revisiones/$bookName');
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Solicitud enviada exitosamente'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      // Prepara los datos del libro con los tipos correctos
+      final Map<String, dynamic> bookData = {
+        'titulo': tituloController.text,
+        'autor': autorController.text,
+        'editorial': editorialController.text,
+        'sinopsis': sinopsisController.text,
+        'etiquetas': selectedTags, // selectedTags ya es List<String>
+        // *** CAMBIO CLAVE: Usar los nombres de campo para URLs de revisión ***
+        'portadaUrlRevision': finalImageUrl,
+        'archivoUrlRevision': finalFileUrl,
+        'lastUpdated': DateTime.now(), // Actualizar la marca de tiempo
+      };
 
+      if (widget.bookToEdit != null && widget.bookToEdit!['id'] != null) {
+        // Actualizar solicitud de libro existente
+        await _firestoreService.updateBookRequest(widget.bookToEdit!['id'], bookData);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Libro actualizado exitosamente!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        // Guardar como una nueva solicitud de publicación
+        await _firestoreService.saveBookRequest(
+          titulo: bookData['titulo'] as String,
+          autor: bookData['autor'] as String,
+          editorial: bookData['editorial'] as String,
+          sinopsis: bookData['sinopsis'] as String,
+          etiquetas: bookData['etiquetas'] as List<String>,
+          portadaUrlRevision: bookData['portadaUrlRevision'] as String?,
+          archivoUrlRevision: bookData['archivoUrlRevision'] as String?,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Solicitud enviada exitosamente'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+      // Navegar de vuelta a BibliotecaA después del envío/actualización exitosa
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const BibliotecaA()),
       );
-
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al enviar solicitud: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 5),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Error al procesar solicitud: ${e.toString()}'),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 5),
       ));
+      print("Error en _submitForm de AgregarA: $e");
     } finally {
       setState(() => isUploading = false);
     }
@@ -242,7 +324,7 @@ class _AgregarAState extends State<AgregarA> {
                   itemBuilder: (context, index) {
                     final tag = allTags[index];
                     return CheckboxListTile(
-                      title: Text(tag['nombre'] ?? 'Nombre no disponible'), // * Por si el nombre es null
+                      title: Text(tag['nombre'] ?? 'Nombre no disponible'),
                       value: tempSelected.contains(tag['id']),
                       onChanged: (bool? value) {
                         setStateDialog(() {
@@ -268,7 +350,7 @@ class _AgregarAState extends State<AgregarA> {
                       selectedTags = tempSelected;
                     });
                     Navigator.pop(context);
-                    _validateForm();
+                    _validateForm(); // Revalidar el formulario
                   },
                   child: const Text('Aceptar'),
                 ),
@@ -284,16 +366,16 @@ class _AgregarAState extends State<AgregarA> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Solicitar Publicación",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          widget.bookToEdit != null ? "Editar Libro" : "Solicitar Publicación",
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xff2E4D4D),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Form(
         key: _formKey,
-        onChanged: _validateForm,
+        onChanged: _validateForm, // Validar formulario ante cualquier cambio
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: ListView(
@@ -302,7 +384,8 @@ class _AgregarAState extends State<AgregarA> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Portada del libro', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Portada del libro',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   GestureDetector(
                     onTap: _pickImage,
@@ -313,26 +396,33 @@ class _AgregarAState extends State<AgregarA> {
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: imageError != null ? Colors.red : Colors.grey[300]!,
-                          width: 1.5
-                        ),
+                            color: imageError != null ? Colors.red : Colors.grey[300]!,
+                            width: 1.5),
+                        // Mostrar la imagen recién seleccionada o la existente
                         image: imagePath != null
-                          ? DecorationImage(
+                            ? DecorationImage(
                                 image: FileImage(File(imagePath!)),
                                 fit: BoxFit.cover,
                               )
-                          : null,
+                            : _currentCoverImageUrl != null && _currentCoverImageUrl!.isNotEmpty
+                                ? DecorationImage(
+                                    image: NetworkImage(_currentCoverImageUrl!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
                       ),
-                      child: imagePath == null
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.add_a_photo, color: Color(0xff2E4D4D), size: 40),
-                              const SizedBox(height: 8),
-                              Text('Agregar portada', style: TextStyle(color: Colors.grey[600])),
-                            ],
-                          )
-                        : null,
+                      child: (imagePath == null && (_currentCoverImageUrl == null || _currentCoverImageUrl!.isEmpty))
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.add_a_photo,
+                                    color: Color(0xff2E4D4D), size: 40),
+                                const SizedBox(height: 8),
+                                Text('Agregar portada',
+                                    style: TextStyle(color: Colors.grey[600])),
+                              ],
+                            )
+                          : null,
                     ),
                   ),
                   if (imageError != null)
@@ -405,16 +495,20 @@ class _AgregarAState extends State<AgregarA> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Etiquetas', style: TextStyle(fontSize: 16, color: Colors.black54)),
+                  const Text('Etiquetas',
+                      style: TextStyle(fontSize: 16, color: Colors.black54)),
                   const SizedBox(height: 8),
                   InkWell(
                     onTap: _showTagSelector,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: selectedTags.isEmpty ? Colors.red : Colors.grey[300]!,
-                          width: 1.0
+                          color: selectedTags.isEmpty
+                              ? Colors.red // Borde rojo si no hay etiquetas seleccionadas
+                              : Colors.grey[300]!,
+                          width: 1.0,
                         ),
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -423,24 +517,26 @@ class _AgregarAState extends State<AgregarA> {
                         children: [
                           Text(
                             selectedTags.isEmpty
-                              ? "Seleccionar etiquetas"
-                              : "Etiquetas seleccionadas: ${selectedTags.length}",
+                                ? "Seleccionar etiquetas"
+                                : "Etiquetas seleccionadas: ${selectedTags.length}",
                             style: TextStyle(
-                              color: selectedTags.isEmpty ? Colors.grey : Colors.black
-                            ),
+                                color: selectedTags.isEmpty
+                                    ? Colors.grey
+                                    : Colors.black),
                           ),
                           const Icon(Icons.arrow_drop_down),
                         ],
                       ),
                     ),
                   ),
-                  if (selectedTags.isEmpty)
+                  if (selectedTags.isEmpty && !isFormValid) // Mostrar error solo si está vacío y no es válido el formulario
                     const Padding(
                       padding: EdgeInsets.only(top: 4.0),
                       child: Text(
                         "Debes seleccionar al menos una etiqueta",
                         style: TextStyle(color: Colors.red, fontSize: 12),
-                      ),),
+                      ),
+                    ),
                   if (selectedTags.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
@@ -448,18 +544,20 @@ class _AgregarAState extends State<AgregarA> {
                         spacing: 8.0,
                         runSpacing: 4.0,
                         children: selectedTags.map((tagId) {
+                          // Busca el nombre de la etiqueta usando el ID
                           var tag = allTags.firstWhere(
                             (tag) => tag['id'] == tagId,
-                            orElse: () => {'nombre': 'Etiqueta no encontrada', 'id': tagId}
+                            orElse: () =>
+                                {'nombre': 'Etiqueta no encontrada', 'id': tagId},
                           );
                           return Chip(
-                            label: Text(tag['nombre'] ?? 'Sin Nombre'), 
+                            label: Text(tag['nombre'] ?? 'Sin Nombre'),
                             deleteIcon: const Icon(Icons.close, size: 18),
                             onDeleted: () {
                               setState(() {
                                 selectedTags.remove(tagId);
                               });
-                              _validateForm();
+                              _validateForm(); // Revalidar el formulario
                             },
                           );
                         }).toList(),
@@ -494,7 +592,8 @@ class _AgregarAState extends State<AgregarA> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Archivo del libro', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Archivo del libro',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: _pickFile,
@@ -503,9 +602,8 @@ class _AgregarAState extends State<AgregarA> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                         side: BorderSide(
-                          color: fileError != null ? Colors.red : Colors.grey[300]!,
-                          width: 1.5
-                        ),
+                            color: fileError != null ? Colors.red : Colors.grey[300]!,
+                            width: 1.5),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 15),
                     ),
@@ -515,9 +613,12 @@ class _AgregarAState extends State<AgregarA> {
                         const Icon(Icons.upload_file, color: Color(0xff2E4D4D)),
                         const SizedBox(width: 8),
                         Text(
+                          // Mostrar el nombre del archivo recién seleccionado o de la URL existente
                           filePath == null
-                            ? "Subir archivo (PDF/ePUB)"
-                            : path.basename(filePath!),
+                              ? (_currentFileUrl != null && _currentFileUrl!.isNotEmpty
+                                  ? path.basename(_currentFileUrl!.split('?')[0]) // Extraer nombre de archivo de la URL
+                                  : "Subir archivo (PDF/ePUB)")
+                              : path.basename(filePath!),
                           style: const TextStyle(color: Colors.black),
                         ),
                       ],
@@ -543,21 +644,23 @@ class _AgregarAState extends State<AgregarA> {
                     onPressed: isUploading ? null : (isFormValid ? _submitForm : null),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isFormValid ? const Color(0xff2E4D4D) : Colors.grey,
+                      foregroundColor: Colors.white, // Color del texto del botón
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: isUploading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(color: Colors.white),
-                        )
-                      : const Text(
-                          "SOLICITAR PUBLICACIÓN",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(color: Colors.white),
+                          )
+                        : Text(
+                            widget.bookToEdit != null ? "ACTUALIZAR LIBRO" : "SOLICITAR PUBLICACIÓN",
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
                 ),
-              ),
-            )],
+              )
+            ],
           ),
         ),
       ),
@@ -569,9 +672,46 @@ class _AgregarAState extends State<AgregarA> {
               decoration: BoxDecoration(color: Color(0xff2E4D4D)),
               child: Text(
                 'Menú',
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ),
+            ListTile(
+              title: const Text('Plan de Suscripción'),
+              leading: const Icon(Icons.subscriptions),
+              onTap: () {
+                Navigator.pop(context);
+                print("Plan de Suscripción");
+                // TODO: Navegar a la página del plan de suscripción
+              },
+            ),
+            ListTile(
+              title: const Text('Foros'),
+              leading: const Icon(Icons.forum),
+              onTap: () {
+                Navigator.pop(context);
+                print("Foros");
+                // TODO: Navegar a la página de foros
+              },
+            ),
+            ListTile(
+              title: const Text('Mis Estadísticas'),
+              leading: const Icon(Icons.insights),
+              onTap: () {
+                Navigator.pop(context); // Cierra el drawer
+                print("Navegar a Mis Estadísticas de Autor");
+                // TODO: Navegar a una página de estadísticas del autor
+              },
+            ),
+            ListTile(
+              title: const Text('Configuración'),
+              leading: const Icon(Icons.settings),
+              onTap: () {
+                Navigator.pop(context); // Cierra el drawer
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const Configuracion()));
+              },
+            ),
+            const Divider(), // Divisor visual
             ListTile(
               leading: const Icon(Icons.exit_to_app),
               title: const Text('Cerrar sesión'),
@@ -607,7 +747,13 @@ class _AgregarAState extends State<AgregarA> {
   }
 }
 
+// DropboxService se mantiene igual, ya que sus métodos están bien definidos
+// para la subida y generación de enlaces de Dropbox.
+// Sin embargo, por consistencia, deberías tener esta clase en un archivo separado
+// como Services/Dropbox_Service.dart si no la tienes ya.
 class DropboxService {
+  // Esta clase debería estar idealmente en su propio archivo, como Services/Dropbox_Service.dart
+  // y ser importada en AgregarA.dart
   Future<String> uploadFile(File file, String dropboxPath) async {
     try {
       final uploadResponse = await http.post(
@@ -650,7 +796,7 @@ class DropboxService {
       );
 
       if (response.statusCode == 409) {
-        // Link already exists, try to get it
+        // El enlace ya existe, intentar obtenerlo
         return await _getExistingSharedLink(dropboxPath);
       } else if (response.statusCode == 200) {
         final json = jsonDecode(response.body);

@@ -2,102 +2,91 @@ import 'package:flutter/material.dart';
 import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart';
 import 'package:spotibook2/Pages/Index/Autores/PerfilA.dart';
 import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
-import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart'; // Asegúrate de que esta importación esté correcta
+import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
+import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart'; // Importar AgregarA
+
+// Si usas servicios de Dropbox o Firestore, asegúrate de tenerlos importados:
+// import 'package:spotibook2/Services/Dropbox_Service.dart';
+// import 'package:spotibook2/Services/Firestore_Service.dart';
+// import 'dart:io'; // Para manejar File si implementas selección de archivos
 
 class ModuloLecA extends StatefulWidget {
-  const ModuloLecA({super.key});
+  // Ahora ModuloLecA acepta un mapa de datos del libro
+  final Map<String, dynamic>? bookData;
+
+  const ModuloLecA({super.key, this.bookData});
 
   @override
   State<ModuloLecA> createState() => _ModuloLecAState();
 }
 
 class _ModuloLecAState extends State<ModuloLecA> {
-  // Nota: La variable _selectedIndex es `final` en tu código original,
-  // lo que significa que su valor no puede cambiar después de la inicialización.
-  // Si deseas que la selección del BottomNavigationBar cambie visualmente,
-  // deberías hacerla no-final y actualizarla en _onItemTapped usando setState.
-  // Por ahora la mantengo como final según tu original.
-  final int _selectedIndex = 0;
+  int _selectedIndex = 0; // Índice mutable para el BottomNavigationBar
 
-  // Placeholder para la URL de la imagen del libro desde Dropbox.
-  // Será nulo inicialmente o hasta que se cargue un libro (propio del autor).
-  String? _bookCoverImageUrl;
-
-  // Placeholder para los detalles del libro.
-  // Para el módulo de autores, estos datos deberían ser los de *sus* libros,
-  // probablemente cargados desde su perfil o una selección.
-  String _bookTitle = 'Título de Tu Libro'; // Ajustado para autor
-  String _bookAuthor = 'Tu Nombre de Autor'; // Ajustado para autor
-  String _bookEditorial = 'Tu Editorial';     // Ajustado para autor
-  String _bookGenre = 'Tu Género';            // Ajustado para autor
-  String _bookRating = '---';                 // Los autores no califican sus propios libros, quizás sea la media
-  String _bookSynopsis = 'Sinopsis: Un resumen de tu propia obra.'; // Ajustado para autor
+  // Variables para los detalles del libro. Se inicializarán desde widget.bookData.
+  String _bookTitle = 'Título de Tu Libro';
+  String _bookAuthor = 'Tu Nombre de Autor';
+  String _bookEditorial = 'Tu Editorial';
+  String _bookGenre = 'Tu Género';
+  String _bookSynopsis = 'Sinopsis: Un resumen de tu propia obra.';
+  String? _bookCoverImageUrl; // URL de la portada del libro
 
   @override
   void initState() {
     super.initState();
-    // Para el módulo de Autores:
-    // Aquí es donde en el futuro cargarías los detalles de uno de los libros del autor.
-    // Podría ser el último subido, un libro destacado, o el que el autor está editando.
-    _loadAuthorBookDetails();
+    _loadBookDetails(); // Cargar los detalles del libro al iniciar
   }
 
-  void _loadAuthorBookDetails() async {
-    // ESTA ES LA LÓGICA QUE TÚ DEBERÁS IMPLEMENTAR EN EL FUTURO PARA AUTORES:
-    // 1. Consultar tu base de datos (Firestore, etc.) para obtener los libros del autor actual.
-    // 2. Seleccionar el libro que quieres mostrar aquí (ej. el último que subió, un borrador, etc.).
-    // 3. Obtener la URL de la portada (que debería estar en Dropbox) de ese libro.
-    // 4. Actualizar el estado con setState para que la UI se refresque.
-
-    /* EJEMPLO DE CÓMO SE VERÍA LA LÓGICA (Necesitas tu propia implementación para autores):
-    try {
-      // Suponiendo que tienes un servicio para obtener los libros del autor logueado
-      Map<String, dynamic>? authorBook = await YourFirestoreService.getAuthorsLatestBook(currentUserId);
-      if (authorBook != null) {
-        setState(() {
-          _bookTitle = authorBook['titulo'] ?? 'Título Desconocido';
-          _bookAuthor = authorBook['autor'] ?? 'Autor Desconocido';
-          _bookEditorial = authorBook['editorial'] ?? 'Editorial Desconocida';
-          _bookGenre = authorBook['genero'] ?? 'Género Desconocido';
-          // _bookRating = authorBook['calificacion'] ?? '---'; // Los autores no suelen calificarse a sí mismos.
-          _bookSynopsis = authorBook['sinopsis'] ?? 'Sinopsis no disponible.';
-          _bookCoverImageUrl = authorBook['portadaUrlDropbox']; // Asumiendo este campo en tu DB
-        });
-      }
-    } catch (e) {
-      print('Error al cargar detalles del libro del autor: $e');
-      // Podrías mostrar un Snackbar o un mensaje de error al usuario.
+  void _loadBookDetails() {
+    if (widget.bookData != null) {
+      // Si se pasaron datos del libro, úsalos para actualizar el estado
+      setState(() {
+        _bookTitle = widget.bookData!['titulo'] ?? 'Título Desconocido';
+        _bookAuthor = widget.bookData!['autor'] ?? 'Autor Desconocido';
+        _bookEditorial = widget.bookData!['editorial'] ?? 'Editorial Desconocida';
+        _bookGenre = widget.bookData!['genero'] ?? 'Género Desconocido';
+        _bookSynopsis = widget.bookData!['sinopsis'] ?? 'Sinopsis no disponible.';
+        _bookCoverImageUrl = widget.bookData!['portadaUrlDropbox']; // Asumiendo este campo en tu DB
+      });
+    } else {
+      // Si no se pasaron datos, muestra placeholders y un mensaje
+      print("No se recibieron datos del libro. Mostrando placeholders.");
+      // Aquí podrías cargar un libro predeterminado del autor si lo deseas,
+      // o dejar los placeholders actuales.
+      setState(() {
+        _bookTitle = 'Libro No Seleccionado';
+        _bookAuthor = 'N/A';
+        _bookEditorial = 'N/A';
+        _bookGenre = 'N/A';
+        _bookSynopsis = 'Por favor, selecciona un libro de tu catálogo o biblioteca.';
+        _bookCoverImageUrl = null; // No hay imagen por defecto
+      });
     }
-    */
-
-    // Por ahora, para que la app no falle y se muestre un placeholder:
-    // _bookCoverImageUrl = null; // O puedes establecer una URL de imagen de prueba si tienes una.
   }
 
   // Método para cambiar de página con BottomNavigationBar
   void _onItemTapped(int index) {
-    // Nota: Usar push repetidamente puede crear una pila de pantallas.
-    // Considera usar pushReplacement para navegación BottomNavigationBar o un IndexedStack con Body.
-    if (index == 0) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => CatalogoA()), // Navegar a CatalogoA
-      );
-    } else if (index == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => BuscarA()), // Navegar a BuscarA
-      );
-    } else if (index == 2) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => BibliotecaA()), // Navegar a BibliotecaA
-      );
-    } else if (index == 3) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => PerfilA()), // Navegar a PerfilA
-      );
+    if (_selectedIndex == index) return; // Si ya está seleccionado, no hacer nada
+
+    setState(() {
+      _selectedIndex = index; // Actualizar el índice seleccionado
+    });
+
+    // Usar Navigator.pushReplacement para todas las navegaciones del BottomNavigationBar
+    // para evitar que se acumulen páginas en la pila.
+    switch (index) {
+      case 0: // Catálogo
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const CatalogoA()));
+        break;
+      case 1: // Buscar
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const BuscarA()));
+        break;
+      case 2: // Biblioteca (que puede ser la sección de "Mis Libros" para el autor)
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const BibliotecaA()));
+        break;
+      case 3: // Perfil
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PerfilA()));
+        break;
     }
   }
 
@@ -105,158 +94,193 @@ class _ModuloLecAState extends State<ModuloLecA> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          "Módulo de Autor", // Cambiado para reflejar el rol de autor
+        title: const Text(
+          "Detalles de Mi Obra", // Título ajustado para autores
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Color(0xff2E4D4D),
-        iconTheme: IconThemeData(color: Colors.white),
+        backgroundColor: const Color(0xff2E4D4D),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
+      body: SingleChildScrollView( // Permite desplazamiento si el contenido es largo
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // Imagen del libro y detalles
+            // Sección de la portada y detalles principales
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start, // Alinea la parte superior
               children: <Widget>[
-                // Condicional para mostrar la imagen de red o un placeholder
                 _bookCoverImageUrl != null && _bookCoverImageUrl!.isNotEmpty
-                    ? Image.network( // Carga la imagen desde la URL de Dropbox
-                        _bookCoverImageUrl!,
-                        width: 100,
-                        height: 150,
-                        fit: BoxFit.cover, // Ajusta la imagen para cubrir el espacio
-                        errorBuilder: (context, error, stackTrace) {
-                          // En caso de error de carga de la URL, muestra un icono
-                          print('Error loading image from URL: $_bookCoverImageUrl - $error');
-                          return Container(
-                            width: 100,
-                            height: 150,
-                            color: Colors.grey[300],
-                            child: Icon(Icons.broken_image, size: 50, color: Colors.grey[600]),
-                          );
-                        },
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8.0),
+                        child: Image.network(
+                          _bookCoverImageUrl!,
+                          width: 120,
+                          height: 180,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            print('Error loading image from URL: $_bookCoverImageUrl - $error');
+                            return Container(
+                              width: 120,
+                              height: 180,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: const Icon(Icons.broken_image, size: 60, color: Colors.grey),
+                            );
+                          },
+                        ),
                       )
                     : Container( // Placeholder cuando no hay URL de imagen
-                        width: 100,
-                        height: 150,
-                        color: Colors.grey[300],
-                        child: Icon(Icons.book, size: 50, color: Colors.grey[600]),
+                        width: 120,
+                        height: 180,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: const Icon(Icons.book, size: 60, color: Colors.grey),
                       ),
-                SizedBox(width: 16),
+                const SizedBox(width: 20),
                 // Detalles del libro
-                Expanded( // Usa Expanded para que el Column de texto ocupe el espacio restante
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        _bookTitle, // Título dinámico
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        _bookTitle,
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: 4),
-                      Text('Autor: $_bookAuthor'),
-                      Text('Editorial: $_bookEditorial'),
-                      Text('Género: $_bookGenre'),
-                      Text('Calificación: $_bookRating'), // Podría ser la calificación promedio
-                      SizedBox(height: 10),
-                      // Sinopsis
-                      Text(
-                        _bookSynopsis, // Sinopsis dinámica
-                        style: TextStyle(fontSize: 14),
-                        maxLines: 3, // Limita a 3 líneas para evitar desbordamiento
-                        overflow: TextOverflow.ellipsis, // Añade "..." si el texto es muy largo
-                      ),
+                      const SizedBox(height: 8),
+                      Text('Autor: $_bookAuthor', style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                      Text('Editorial: $_bookEditorial', style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                      Text('Género: $_bookGenre', style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                      const Text('Calificación: N/A', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 20),
-            // Botones de acción (Editar Libro, Ver Estadísticas, etc. - ajustados para autor)
+            const SizedBox(height: 25),
+
+            // Sinopsis del libro
+            const Text(
+              'Sinopsis:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _bookSynopsis,
+              style: const TextStyle(fontSize: 15, height: 1.5),
+              textAlign: TextAlign.justify,
+            ),
+            const SizedBox(height: 25),
+
+            // Botones de acción principales para el autor
+            const Text(
+              'Acciones:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
             Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
-                IconButton(
-                  icon: Icon(Icons.edit), // Icono para editar el libro
-                  onPressed: () {
-                    // Acción para editar el libro
-                  },
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // Navegar a la pantalla de edición, pasando los datos del libro
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AgregarA(bookToEdit: widget.bookData),
+                        ),
+                      ).then((_) {
+                        // Opcional: Cuando regreses de AgregarA (si se editó), recarga los detalles
+                        // Esto asegura que la pantalla ModuloLecA refleje los cambios.
+                        _loadBookDetails();
+                      });
+                      print('Editar libro: $_bookTitle');
+                    },
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Editar Información'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xff2E4D4D),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
                 ),
-                SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    // Acción para subir o actualizar el libro (ej. a Dropbox)
-                    // Aquí es donde llamarías a DropboxService.uploadFile
-                    // Asegúrate de pasar el archivo y la ruta correcta.
-                    // Ejemplo (necesitas obtener el File del libro real):
-                    /*
-                    // Suponiendo que tienes un File _selectedFile
-                    // y la ruta deseada en Dropbox _dropboxUploadPath
-                    try {
-                      final dropboxService = DropboxService();
-                      String? publicUrl = await dropboxService.uploadFile(_selectedFile, _dropboxUploadPath);
-                      if (publicUrl != null) {
-                        print('Libro subido y URL pública: $publicUrl');
-                        // Aquí actualizas tu base de datos con publicUrl
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Libro subido exitosamente!')),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error al subir el libro a Dropbox.')),
-                        );
-                      }
-                    } catch (e) {
-                      print('Error general al subir desde ModuloLec (Autores): $e');
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // TODO: Implementar lógica para subir o actualizar el archivo del libro (PDF/EPUB) a Dropbox
+                      print('Subir/Actualizar Archivo: $_bookTitle');
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error inesperado al subir el libro.')),
+                        const SnackBar(content: Text('Funcionalidad de subir/actualizar archivo pendiente.')),
                       );
-                    }
-                    */
-                  },
-                  child: Text('Subir/Actualizar Libro'),
-                ),
-                SizedBox(width: 10),
-                IconButton(
-                  icon: Icon(Icons.bar_chart), // Icono para ver estadísticas
-                  onPressed: () {
-                    // Acción para ver estadísticas del libro
-                  },
+                    },
+                    icon: const Icon(Icons.cloud_upload),
+                    label: const Text('Subir Archivo'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
                 ),
               ],
             ),
-            SizedBox(height: 20),
-            // ListView con secciones relevantes para autores
-            Expanded(
-              child: ListView(
-                children: <Widget>[
-                  ListTile(
-                    leading: Icon(Icons.book, color: Color(0xff2E4D4D)),
-                    title: Text("Mis Borradores", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    onTap: () {
-                      // Acción para ver borradores
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.check_circle_outline, color: Color(0xff2E4D4D)),
-                    title: Text("En Revisión", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    onTap: () {
-                      // Acción para ver libros en revisión
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.publish, color: Color(0xff2E4D4D)),
-                    title: Text("Publicados", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    onTap: () {
-                      // Acción para ver libros publicados
-                    },
-                  ),
-                ],
+            const SizedBox(height: 10),
+            Center(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  // TODO: Navegar a la pantalla de estadísticas específicas para este libro
+                  print('Ver estadísticas de: $_bookTitle');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Funcionalidad de estadísticas pendiente.')),
+                  );
+                },
+                icon: const Icon(Icons.bar_chart),
+                label: const Text('Ver Estadísticas del Libro'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xff2E4D4D),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                ),
               ),
+            ),
+            const SizedBox(height: 30),
+
+            // Sección para gestionar el contenido del libro (capítulos, etc.)
+            const Text(
+              'Gestión de Contenido:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            ListTile(
+              leading: const Icon(Icons.list_alt, color: Color(0xff2E4D4D)),
+              title: const Text("Lista de Capítulos"),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                print("Navegar a lista de capítulos");
+                // TODO: Navegar a una pantalla para gestionar capítulos
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.description, color: Color(0xff2E4D4D)),
+              title: const Text("Editar Sinopsis Completa"),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                print("Editar sinopsis completa");
+                // TODO: Navegar a una pantalla para editar la sinopsis larga
+              },
             ),
           ],
         ),
@@ -264,11 +288,12 @@ class _ModuloLecAState extends State<ModuloLecA> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor:Color(0xff2E4D4D),
-        unselectedItemColor: Colors.grey,
-        backgroundColor: Color(0xff2E4D4D),
+        backgroundColor: const Color(0xff2E4D4D),
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.grey[400],
+        type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catalogo'),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catálogo'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
           BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Biblioteca'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
