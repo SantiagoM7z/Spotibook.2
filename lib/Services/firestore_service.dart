@@ -283,8 +283,8 @@ class FirestoreService {
         final author = (book['autor'] as String? ?? '').toLowerCase();
         final editorial = (book['editorial'] as String? ?? '').toLowerCase();
         return title.contains(queryLower) ||
-               author.contains(queryLower) ||
-               editorial.contains(queryLower);
+              author.contains(queryLower) ||
+              editorial.contains(queryLower);
       }).toList();
 
     } catch (e) {

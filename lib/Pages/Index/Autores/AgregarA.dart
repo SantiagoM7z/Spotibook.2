@@ -77,7 +77,6 @@ class _AgregarAState extends State<AgregarA> {
       sinopsisController.text = widget.bookToEdit!['sinopsis'] ?? '';
       // Asegúrate de que las etiquetas se manejen como List<String>
       selectedTags = List<String>.from(widget.bookToEdit!['etiquetas'] ?? []);
-      // *** CAMBIO CLAVE: Leer de los campos de URL de revisión ***
       _currentCoverImageUrl = widget.bookToEdit!['portadaUrlRevision'];
       _currentFileUrl = widget.bookToEdit!['archivoUrlRevision'];
     }
@@ -251,7 +250,6 @@ class _AgregarAState extends State<AgregarA> {
         'editorial': editorialController.text,
         'sinopsis': sinopsisController.text,
         'etiquetas': selectedTags, // selectedTags ya es List<String>
-        // *** CAMBIO CLAVE: Usar los nombres de campo para URLs de revisión ***
         'portadaUrlRevision': finalImageUrl,
         'archivoUrlRevision': finalFileUrl,
         'lastUpdated': DateTime.now(), // Actualizar la marca de tiempo

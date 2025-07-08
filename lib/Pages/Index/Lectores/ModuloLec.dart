@@ -15,32 +15,26 @@ class ModuloLec extends StatefulWidget {
 }
 
 class _ModuloLecState extends State<ModuloLec> {
+  // El _selectedIndex y _onItemTapped permanecen como los tenías.
   final int _selectedIndex = 0; // Índice para 'Catálogo' en la BottomNavigationBar
-
-  // Los datos del libro ahora se obtienen directamente de 'widget.bookData'
-  // No necesitamos variables de estado para ellos.
 
   @override
   void initState() {
     super.initState();
     // Ya no necesitamos una función _loadAuthorizedBookDetails,
     // porque los datos del libro se pasan directamente al constructor.
+    // Opcional: Imprime los datos para verificar que se reciben correctamente.
+    print("Datos del libro recibidos en ModuloLec: ${widget.bookData}");
   }
 
-  // Método para cambiar de página con BottomNavigationBar
+  // Método para cambiar de página con BottomNavigationBar (PERMANECE)
   void _onItemTapped(int index) {
-    // Usamos pushReplacement para evitar acumular rutas y mantener limpia la pila de navegación.
-    // Esto asegura que al cambiar de pestaña, la anterior se elimina del historial.
     if (_selectedIndex == index) return; // Si ya estamos en la página actual, no hacemos nada.
 
     setState(() {
       // Aunque _selectedIndex no se usa directamente para la navegación aquí,
       // se mantiene para la lógica de visualización del BottomNavigationBar.
       // La navegación real se maneja con Navigator.pushReplacement.
-      // Si este ModuloLec no es parte de las pestañas principales,
-      // el _selectedIndex y la navegación del BottomNavigationBar pueden ser simplificados
-      // o eliminados si esta pantalla no tiene BottomNavigationBar.
-      // Por ahora, asumimos que sí lo tiene y que el "catálogo" es su posición principal.
     });
 
     switch (index) {
@@ -62,6 +56,7 @@ class _ModuloLecState extends State<ModuloLec> {
   @override
   Widget build(BuildContext context) {
     // Extraer los datos del libro directamente del widget.bookData
+    // (MODIFICACIÓN: Uso de widget.bookData directamente)
     final String title = widget.bookData['titulo'] ?? 'Título Desconocido';
     final String author = widget.bookData['autor'] ?? 'Autor Desconocido';
     final String editorial = widget.bookData['editorial'] ?? 'Editorial Desconocida';
@@ -69,7 +64,7 @@ class _ModuloLecState extends State<ModuloLec> {
     // Podrías unirlas con ', ' si son múltiples.
     final List<dynamic> tags = widget.bookData['etiquetas'] ?? [];
     final String genre = tags.isNotEmpty ? tags.join(', ') : 'Género Desconocido';
-    
+
     // Asume que tienes un campo de calificación en Firestore, si no, usa un valor predeterminado
     final double rating = (widget.bookData['calificacionPromedio'] as num?)?.toDouble() ?? 0.0;
     String displayRating = '';
@@ -80,8 +75,10 @@ class _ModuloLecState extends State<ModuloLec> {
         displayRating += '☆';
       }
     }
-    
+
     final String synopsis = widget.bookData['sinopsis'] ?? 'Sinopsis no disponible.';
+    // Usar 'portadaUrlPublica' o 'portadaUrl' dependiendo de cómo lo tengas en tu Firestore
+    // Si tu Firestore usa 'portadaUrl', déjalo así. Si usas 'portadaUrlPublica' como en ejemplos previos, cámbialo.
     final String? bookCoverImageUrl = widget.bookData['portadaUrl'] as String?;
     final String? bookFileUrl = widget.bookData['archivoUrl'] as String?; // URL para el archivo PDF/ePub
 
@@ -108,27 +105,49 @@ class _ModuloLecState extends State<ModuloLec> {
               children: <Widget>[
                 // Condicional para mostrar la imagen de red o un placeholder
                 bookCoverImageUrl != null && bookCoverImageUrl.isNotEmpty
-                    ? Image.network( // Carga la imagen desde la URL de Dropbox
-                        bookCoverImageUrl,
-                        width: 120, // Aumentado ligeramente para mejor visualización
-                        height: 180, // Aumentado ligeramente
-                        fit: BoxFit.cover, // Ajusta la imagen para cubrir el espacio
-                        errorBuilder: (context, error, stackTrace) {
-                          // En caso de error de carga de la URL, muestra un icono
-                          print('Error loading image from URL: $bookCoverImageUrl - $error');
-                          return Container(
-                            width: 120,
-                            height: 180,
-                            color: Colors.grey[300],
-                            child: Icon(Icons.broken_image, size: 60, color: Colors.grey[600]),
-                          );
-                        },
+                    ? ClipRRect( // Recorta la imagen con los bordes redondeados
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network( // Carga la imagen desde la URL de Dropbox (o Firebase Storage)
+                          bookCoverImageUrl,
+                          width: 120, // Aumentado ligeramente para mejor visualización
+                          height: 180, // Aumentado ligeramente
+                          fit: BoxFit.cover, // Ajusta la imagen para cubrir el espacio
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return SizedBox( // Placeholder mientras carga
+                              width: 120,
+                              height: 180,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            // En caso de error de carga de la URL, muestra un icono
+                            print('Error loading image from URL: $bookCoverImageUrl - $error');
+                            return Container(
+                              width: 120,
+                              height: 180,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.broken_image, size: 60, color: Colors.grey),
+                            );
+                          },
+                        ),
                       )
                     : Container( // Placeholder cuando no hay URL de imagen
                         width: 120,
                         height: 180,
-                        color: Colors.grey[300],
-                        child: Icon(Icons.book, size: 60, color: Colors.grey[600]),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.book, size: 60, color: Colors.grey),
+                        ),
                       ),
                 const SizedBox(width: 16),
                 // Detalles del libro
@@ -164,7 +183,7 @@ class _ModuloLecState extends State<ModuloLec> {
               textAlign: TextAlign.justify,
             ),
             const SizedBox(height: 30),
-            // Botones de acción (Leer, Favoritos, Descargar)
+            // Botones de acción (Leer, Favoritos, Descargar, Ir al Foro)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
@@ -176,6 +195,9 @@ class _ModuloLecState extends State<ModuloLec> {
                       onPressed: () {
                         // TODO: Acción para agregar a favoritos (usar FirestoreService)
                         print("Agregar a Favoritos");
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Funcionalidad de Favoritos próximamente.')),
+                        );
                       },
                     ),
                     const Text('Favorito', style: TextStyle(fontSize: 12)),
@@ -208,6 +230,9 @@ class _ModuloLecState extends State<ModuloLec> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
                     textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
                 Column(
@@ -218,6 +243,9 @@ class _ModuloLecState extends State<ModuloLec> {
                       onPressed: () {
                         // TODO: Acción para descargar el libro (manejo local)
                         print("Descargar Libro");
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Funcionalidad de Descarga próximamente.')),
+                        );
                       },
                     ),
                     const Text('Descargar', style: TextStyle(fontSize: 12)),
@@ -226,6 +254,30 @@ class _ModuloLecState extends State<ModuloLec> {
               ],
             ),
             const SizedBox(height: 30),
+            // Botón para Ir al Foro del Libro (Futura Implementación)
+            ElevatedButton.icon(
+              onPressed: () {
+                // TODO: Implementar la navegación al foro general del libro.
+                // Necesitarás pasar el ID o nombre del libro al foro.
+                print('Navegando al foro del libro: $title');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Funcionalidad de foro para "$title" próximamente.')),
+                );
+              },
+              icon: const Icon(Icons.forum),
+              label: const Text('Ir al Foro del Libro'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent, // Un color diferente para distinguirlo
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 30), // Espacio adicional
+
             // ListView con las categorías de estado del libro (para marcar su estado)
             const Text(
               'Mi progreso:',
@@ -239,6 +291,9 @@ class _ModuloLecState extends State<ModuloLec> {
               onTap: () {
                 // TODO: Acción para marcar como pendiente en Firestore para el usuario actual
                 print("Marcar como Pendiente");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Funcionalidad de progreso próximamente.')),
+                );
               },
             ),
             ListTile(
@@ -247,6 +302,9 @@ class _ModuloLecState extends State<ModuloLec> {
               onTap: () {
                 // TODO: Acción para marcar como en progreso en Firestore para el usuario actual
                 print("Marcar como En Progreso");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Funcionalidad de progreso próximamente.')),
+                );
               },
             ),
             ListTile(
@@ -255,18 +313,22 @@ class _ModuloLecState extends State<ModuloLec> {
               onTap: () {
                 // TODO: Acción para marcar como leído en Firestore para el usuario actual
                 print("Marcar como Leído");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Funcionalidad de progreso próximamente.')),
+                );
               },
             ),
           ],
         ),
       ),
+      // El BottomNavigationBar PERMANECE intacto, tal como lo pediste.
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex, // Este índice es estático en ModuloLec, ajusta si es dinámico.
+        currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         backgroundColor: const Color(0xff2E4D4D),
-        selectedItemColor: Colors.white, // Color para el ítem seleccionado
-        unselectedItemColor: Colors.grey[400], // Color para los ítems no seleccionados
-        type: BottomNavigationBarType.fixed, // Asegura que todos los ítems sean visibles
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.grey[400],
+        type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catálogo'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),

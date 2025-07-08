@@ -3,88 +3,65 @@ import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart';
 import 'package:spotibook2/Pages/Index/Autores/PerfilA.dart';
 import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
 import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
-import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart'; // Importar AgregarA
-
-// Si usas servicios de Dropbox o Firestore, asegúrate de tenerlos importados:
-// import 'package:spotibook2/Services/Dropbox_Service.dart';
-// import 'package:spotibook2/Services/Firestore_Service.dart';
-// import 'dart:io'; // Para manejar File si implementas selección de archivos
+import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart'; // Necesario para la edición
+import 'package:firebase_auth/firebase_auth.dart'; // ¡Necesario para obtener el UID del usuario!
 
 class ModuloLecA extends StatefulWidget {
-  // Ahora ModuloLecA acepta un mapa de datos del libro
-  final Map<String, dynamic>? bookData;
+  final Map<String, dynamic> bookData;
 
-  const ModuloLecA({super.key, this.bookData});
+  const ModuloLecA({super.key, required this.bookData});
 
   @override
   State<ModuloLecA> createState() => _ModuloLecAState();
 }
 
 class _ModuloLecAState extends State<ModuloLecA> {
-  int _selectedIndex = 0; // Índice mutable para el BottomNavigationBar
-
-  // Variables para los detalles del libro. Se inicializarán desde widget.bookData.
-  String _bookTitle = 'Título de Tu Libro';
-  String _bookAuthor = 'Tu Nombre de Autor';
-  String _bookEditorial = 'Tu Editorial';
-  String _bookGenre = 'Tu Género';
-  String _bookSynopsis = 'Sinopsis: Un resumen de tu propia obra.';
-  String? _bookCoverImageUrl; // URL de la portada del libro
+  int _selectedIndex = 0;
+  User? _currentUser; // Para almacenar el usuario actual
+  String? uidAutor; // Para almacenar el ID del autor del libro que se está viendo
+  bool _isAuthorOfThisBook = false; // Flag para controlar la visibilidad de los botones de autor
 
   @override
   void initState() {
     super.initState();
-    _loadBookDetails(); // Cargar los detalles del libro al iniciar
+    // Obtener el ID del autor del libro de los datos pasados
+    uidAutor = widget.bookData['autorId'] as String?; // Asume que tienes un campo 'autorId' en tus metadatos
+    _loadCurrentUserAndCheckAuthorship();
+    print("Datos del libro recibidos en ModuloLecA: ${widget.bookData}");
   }
 
-  void _loadBookDetails() {
-    if (widget.bookData != null) {
-      // Si se pasaron datos del libro, úsalos para actualizar el estado
+  // Carga el usuario actual y verifica si es el autor del libro
+  void _loadCurrentUserAndCheckAuthorship() {
+    _currentUser = FirebaseAuth.instance.currentUser;
+    if (_currentUser != null && uidAutor != null) {
       setState(() {
-        _bookTitle = widget.bookData!['titulo'] ?? 'Título Desconocido';
-        _bookAuthor = widget.bookData!['autor'] ?? 'Autor Desconocido';
-        _bookEditorial = widget.bookData!['editorial'] ?? 'Editorial Desconocida';
-        _bookGenre = widget.bookData!['genero'] ?? 'Género Desconocido';
-        _bookSynopsis = widget.bookData!['sinopsis'] ?? 'Sinopsis no disponible.';
-        _bookCoverImageUrl = widget.bookData!['portadaUrlDropbox']; // Asumiendo este campo en tu DB
-      });
-    } else {
-      // Si no se pasaron datos, muestra placeholders y un mensaje
-      print("No se recibieron datos del libro. Mostrando placeholders.");
-      // Aquí podrías cargar un libro predeterminado del autor si lo deseas,
-      // o dejar los placeholders actuales.
-      setState(() {
-        _bookTitle = 'Libro No Seleccionado';
-        _bookAuthor = 'N/A';
-        _bookEditorial = 'N/A';
-        _bookGenre = 'N/A';
-        _bookSynopsis = 'Por favor, selecciona un libro de tu catálogo o biblioteca.';
-        _bookCoverImageUrl = null; // No hay imagen por defecto
+        _isAuthorOfThisBook = (_currentUser!.uid == uidAutor);
       });
     }
   }
 
-  // Método para cambiar de página con BottomNavigationBar
+  // Método para cambiar de página con BottomNavigationBar (Lógica de navegación de AUTOR)
   void _onItemTapped(int index) {
-    if (_selectedIndex == index) return; // Si ya está seleccionado, no hacer nada
+    if (_selectedIndex == index) return;
 
     setState(() {
-      _selectedIndex = index; // Actualizar el índice seleccionado
+      _selectedIndex = index;
     });
 
-    // Usar Navigator.pushReplacement para todas las navegaciones del BottomNavigationBar
-    // para evitar que se acumulen páginas en la pila.
     switch (index) {
-      case 0: // Catálogo
+      case 0: // Catálogo (para autores)
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const CatalogoA()));
         break;
-      case 1: // Buscar
+      case 1: // Buscar (para autores)
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const BuscarA()));
         break;
-      case 2: // Biblioteca (que puede ser la sección de "Mis Libros" para el autor)
+      case 2: // Agregar (¡Opción específica de autor en el BottomNavigationBar!)
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AgregarA()));
+        break;
+      case 3: // Biblioteca (para autores)
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const BibliotecaA()));
         break;
-      case 3: // Perfil
+      case 4: // Perfil (para autores)
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PerfilA()));
         break;
     }
@@ -92,10 +69,29 @@ class _ModuloLecAState extends State<ModuloLecA> {
 
   @override
   Widget build(BuildContext context) {
+    // Extraer los datos del libro directamente de widget.bookData
+    final String title = widget.bookData['titulo'] ?? 'Título Desconocido';
+    final String author = widget.bookData['autor'] ?? 'Autor Desconocido';
+    final String editorial = widget.bookData['editorial'] ?? 'Editorial Desconocida';
+    final List<dynamic> tags = widget.bookData['etiquetas'] ?? [];
+    final String genre = tags.isNotEmpty ? tags.join(', ') : 'Género Desconocido';
+    final double rating = (widget.bookData['calificacionPromedio'] as num?)?.toDouble() ?? 0.0;
+    String displayRating = '';
+    for(int i=0; i<5; i++){
+      if(i < rating.round()){
+        displayRating += '★';
+      } else {
+        displayRating += '☆';
+      }
+    }
+    final String synopsis = widget.bookData['sinopsis'] ?? 'Sinopsis no disponible.';
+    final String? bookCoverImageUrl = widget.bookData['portadaUrlPublica'] as String?;
+    final String? bookFileUrl = widget.bookData['contenidoUrl'] as String?; // Usado por "Leer Libro"
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Detalles de Mi Obra", // Título ajustado para autores
+          "Detalles del Libro", // Título para la vista de cualquier libro
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -104,25 +100,39 @@ class _ModuloLecAState extends State<ModuloLecA> {
         backgroundColor: const Color(0xff2E4D4D),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView( // Permite desplazamiento si el contenido es largo
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             // Sección de la portada y detalles principales
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start, // Alinea la parte superior
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                _bookCoverImageUrl != null && _bookCoverImageUrl!.isNotEmpty
+                bookCoverImageUrl != null && bookCoverImageUrl.isNotEmpty
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(8.0),
                         child: Image.network(
-                          _bookCoverImageUrl!,
+                          bookCoverImageUrl,
                           width: 120,
                           height: 180,
                           fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return SizedBox(
+                              width: 120,
+                              height: 180,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              ),
+                            );
+                          },
                           errorBuilder: (context, error, stackTrace) {
-                            print('Error loading image from URL: $_bookCoverImageUrl - $error');
+                            print('Error loading image from URL: $bookCoverImageUrl - $error');
                             return Container(
                               width: 120,
                               height: 180,
@@ -135,32 +145,33 @@ class _ModuloLecAState extends State<ModuloLecA> {
                           },
                         ),
                       )
-                    : Container( // Placeholder cuando no hay URL de imagen
+                    : Container(
                         width: 120,
                         height: 180,
                         decoration: BoxDecoration(
                           color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(8.0),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.book, size: 60, color: Colors.grey),
+                        child: const Center(
+                          child: Icon(Icons.book, size: 60, color: Colors.grey),
+                        ),
                       ),
                 const SizedBox(width: 20),
-                // Detalles del libro
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        _bookTitle,
+                        title,
                         style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
-                      Text('Autor: $_bookAuthor', style: const TextStyle(fontSize: 16, color: Colors.grey)),
-                      Text('Editorial: $_bookEditorial', style: const TextStyle(fontSize: 16, color: Colors.grey)),
-                      Text('Género: $_bookGenre', style: const TextStyle(fontSize: 16, color: Colors.grey)),
-                      const Text('Calificación: N/A', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                      Text('Autor: $author', style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                      Text('Editorial: $editorial', style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                      Text('Género: $genre', style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                      Text('Calificación: $displayRating', style: const TextStyle(fontSize: 16, color: Colors.grey)),
                       const SizedBox(height: 16),
                     ],
                   ),
@@ -176,115 +187,213 @@ class _ModuloLecAState extends State<ModuloLecA> {
             ),
             const SizedBox(height: 8),
             Text(
-              _bookSynopsis,
+              synopsis,
               style: const TextStyle(fontSize: 15, height: 1.5),
               textAlign: TextAlign.justify,
             ),
             const SizedBox(height: 25),
 
-            // Botones de acción principales para el autor
-            const Text(
-              'Acciones:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
+            // Botones de acción principales (Leer Libro, Favoritos, Descargar, Ir al Foro)
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // Navegar a la pantalla de edición, pasando los datos del libro
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AgregarA(bookToEdit: widget.bookData),
-                        ),
-                      ).then((_) {
-                        // Opcional: Cuando regreses de AgregarA (si se editó), recarga los detalles
-                        // Esto asegura que la pantalla ModuloLecA refleje los cambios.
-                        _loadBookDetails();
-                      });
-                      print('Editar libro: $_bookTitle');
-                    },
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Editar Información'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xff2E4D4D),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                Column( // Botón de Favorito
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.favorite_border, size: 30),
+                      color: const Color(0xff2E4D4D),
+                      onPressed: () {
+                        print("Agregar a Favoritos");
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Funcionalidad de Favoritos próximamente.')),
+                        );
+                      },
+                    ),
+                    const Text('Favorito', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+                ElevatedButton.icon( // Botón Leer Libro (Idéntico a ModuloLec.dart)
+                  onPressed: () {
+                    if (bookFileUrl != null && bookFileUrl.isNotEmpty) {
+                      print('Abriendo libro desde URL: $bookFileUrl');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Abriendo libro: $title')),
+                      );
+                    } else {
+                      print('Error: No se encontró URL de contenido para este libro.');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Contenido del libro no disponible.')),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.menu_book), // Icono de libro
+                  label: const Text('Leer Libro'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xff2E4D4D), // Color principal de tu app
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                    textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // TODO: Implementar lógica para subir o actualizar el archivo del libro (PDF/EPUB) a Dropbox
-                      print('Subir/Actualizar Archivo: $_bookTitle');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Funcionalidad de subir/actualizar archivo pendiente.')),
-                      );
-                    },
-                    icon: const Icon(Icons.cloud_upload),
-                    label: const Text('Subir Archivo'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                Column( // Botón de Descargar
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.download, size: 30),
+                      color: const Color(0xff2E4D4D),
+                      onPressed: () {
+                        print("Descargar Libro");
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Funcionalidad de Descarga próximamente.')),
+                        );
+                      },
                     ),
-                  ),
+                    const Text('Descargar', style: TextStyle(fontSize: 12)),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Center(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: Navegar a la pantalla de estadísticas específicas para este libro
-                  print('Ver estadísticas de: $_bookTitle');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Funcionalidad de estadísticas pendiente.')),
-                  );
-                },
-                icon: const Icon(Icons.bar_chart),
-                label: const Text('Ver Estadísticas del Libro'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff2E4D4D),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+            const SizedBox(height: 20),
+
+            // Botón para Ir al Foro del Libro
+            ElevatedButton.icon(
+              onPressed: () {
+                // TODO: Implementar la navegación al foro general del libro.
+                print('Navegando al foro del libro: $title');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Funcionalidad de foro para "$title" próximamente.')),
+                );
+              },
+              icon: const Icon(Icons.forum),
+              label: const Text('Ir al Foro del Libro'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
             const SizedBox(height: 30),
 
-            // Sección para gestionar el contenido del libro (capítulos, etc.)
+            // Sección "Mi progreso" (funcionalidad de lector)
             const Text(
-              'Gestión de Contenido:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              'Mi progreso:',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
             ListTile(
-              leading: const Icon(Icons.list_alt, color: Color(0xff2E4D4D)),
-              title: const Text("Lista de Capítulos"),
-              trailing: const Icon(Icons.arrow_forward_ios),
+              leading: const Icon(Icons.access_time, color: Color(0xff2E4D4D)),
+              title: const Text("Marcar como Pendiente", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               onTap: () {
-                print("Navegar a lista de capítulos");
-                // TODO: Navegar a una pantalla para gestionar capítulos
+                print("Marcar como Pendiente");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Funcionalidad de progreso próximamente.')),
+                );
               },
             ),
             ListTile(
-              leading: const Icon(Icons.description, color: Color(0xff2E4D4D)),
-              title: const Text("Editar Sinopsis Completa"),
-              trailing: const Icon(Icons.arrow_forward_ios),
+              leading: const Icon(Icons.hourglass_empty, color: Color(0xff2E4D4D)),
+              title: const Text("Marcar como En Progreso", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               onTap: () {
-                print("Editar sinopsis completa");
-                // TODO: Navegar a una pantalla para editar la sinopsis larga
+                print("Marcar como En Progreso");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Funcionalidad de progreso próximamente.')),
+                );
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.check_circle, color: Color(0xff2E4D4D)),
+              title: const Text("Marcar como Leído", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              onTap: () {
+                print("Marcar como Leído");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Funcionalidad de progreso próximamente.')),
+                );
+              },
+            ),
+            const SizedBox(height: 30), // Espacio adicional antes de los botones condicionales
+
+            // --- SECCIÓN DE ACCIONES DE AUTOR (CONDICIONAL) ---
+            // Solo se muestra si el usuario logueado es el autor del libro
+            if (_isAuthorOfThisBook) ...[
+              const Text(
+                'Acciones de Autor:',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.redAccent),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AgregarA(bookToEdit: widget.bookData),
+                          ),
+                        ).then((_) {
+                          print('Regresando de edición. Los datos del libro podrían haberse actualizado.');
+                        });
+                        print('Editar libro: $title');
+                      },
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Editar Información'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xff2E4D4D),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        print('Subir/Actualizar Archivo: $title');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Funcionalidad de subir/actualizar archivo pendiente.')),
+                        );
+                      },
+                      icon: const Icon(Icons.cloud_upload),
+                      label: const Text('Subir Archivo'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    print('Ver estadísticas de: $title');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Funcionalidad de estadísticas pendiente.')),
+                    );
+                  },
+                  icon: const Icon(Icons.bar_chart),
+                  label: const Text('Ver Estadísticas del Libro'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xff2E4D4D),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
+      // El BottomNavigationBar PERMANECE intacto con las opciones de autor.
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -295,6 +404,7 @@ class _ModuloLecAState extends State<ModuloLecA> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catálogo'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Agregar'), // Opción específica de autor
           BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Biblioteca'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
