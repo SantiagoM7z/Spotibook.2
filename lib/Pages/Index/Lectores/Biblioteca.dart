@@ -5,10 +5,11 @@ import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Buscar.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Perfil.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
-import 'package:spotibook2/Pages/Index/Settings/Configuracion.dart';
+import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionLec.dart';
 import 'package:spotibook2/Services/Firestore_service.dart'; // Importar FirestoreService
 import 'package:firebase_auth/firebase_auth.dart'; // Necesario para obtener el usuario actual
-import 'package:spotibook2/Pages/Index/Lectores/ModuloLec.dart'; // Import para ModuloLec
+import 'package:spotibook2/Pages/Index/Lectores/ModuloLec.dart';
+import 'package:spotibook2/Pages/Index/Foros/ForosporUsuario/ForosLectores.dart';
 
 class Biblioteca extends StatefulWidget {
   const Biblioteca({super.key});
@@ -309,9 +310,8 @@ class _BibliotecaState extends State<Biblioteca> {
               title: const Text('Foros'),
               leading: const Icon(Icons.forum),
               onTap: () {
-                Navigator.pop(context);
-                print("Foros");
-                // TODO: Navegar a la página de foros
+                Navigator.pop(context); // Close the drawer
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ForosLectores())); 
               },
             ),
             ListTile(
@@ -319,7 +319,7 @@ class _BibliotecaState extends State<Biblioteca> {
               leading: const Icon(Icons.settings),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const Configuracion())); // Navigate to Configuracion
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfiguracionLec())); // Navigate to ConfiguracionLec
               },
             ),
             const Divider(), // Divisor visual

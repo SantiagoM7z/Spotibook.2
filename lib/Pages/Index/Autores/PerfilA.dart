@@ -3,12 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart';
 import 'package:spotibook2/Pages/Index/Autores/NotificacionesA.dart';
-import 'package:spotibook2/Pages/Index/Settings/Configuracion.dart';
+import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionAut.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart';
 import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
 import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
+import 'package:spotibook2/Pages/Index/Foros/ForosporUsuario/ForosAutores.dart'; // Para navegar a Foros
 
 class PerfilA extends StatefulWidget {
   const PerfilA({super.key});
@@ -465,9 +466,8 @@ class _PerfilAState extends State<PerfilA> {
               title: const Text('Foros'),
               leading: const Icon(Icons.forum),
               onTap: () {
-                Navigator.pop(context);
-                print("Foros");
-                // TODO: Navegar a la página de foros
+                Navigator.pop(context); // Close the drawer
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ForosAutores())); 
               },
             ),
             ListTile(
@@ -484,7 +484,7 @@ class _PerfilAState extends State<PerfilA> {
               leading: const Icon(Icons.settings),
               onTap: () {
                 Navigator.pop(context); // Cierra el drawer
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const Configuracion()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfiguracionAut()));
               },
             ),
             const Divider(), // Divisor visual

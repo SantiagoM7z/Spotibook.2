@@ -1,27 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
+import 'package:spotibook2/Pages/Index/Lectores/Buscar.dart'; 
+import 'package:spotibook2/Pages/Index/Lectores/Perfil.dart'; 
+import 'package:spotibook2/Pages/Index/Lectores/Biblioteca.dart'; 
 import 'package:spotibook2/Pages/Index/Settings/Idioma.dart';
 import 'package:spotibook2/Pages/Index/Settings/Noti.dart';
 import 'package:spotibook2/Pages/Index/Settings/Pago.dart';
 import 'package:spotibook2/Pages/Index/Settings/SoportConf.dart';
 import 'package:spotibook2/Pages/Index/Settings/TemaConf.dart';
 
-class Configuracion extends StatefulWidget {
-  const Configuracion({super.key});
+class ConfiguracionLec extends StatefulWidget {
+  const ConfiguracionLec({super.key});
 
   @override
-  State<Configuracion> createState() => _ConfiguracionState();
+  State<ConfiguracionLec> createState() => _ConfiguracionLecState();
 }
 
-class _ConfiguracionState extends State<Configuracion> {
-  final int _selectedIndex = 0;
+class _ConfiguracionLecState extends State<ConfiguracionLec> {
+  int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
-    if (index == 0) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => Catalogo()),
-      );
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0: 
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const Catalogo()));
+        break; 
+      case 1: 
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const Buscar()));
+        break;
+      case 2: 
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const Biblioteca()));
+        break;
+      case 3: 
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const Perfil()));
+        break;
     }
   }
 
@@ -112,7 +127,8 @@ class _ConfiguracionState extends State<Configuracion> {
         onTap: _onItemTapped,
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.grey,
-        backgroundColor: Color(0xff2E4D4D),
+        backgroundColor: const Color(0xff2E4D4D),
+        type: BottomNavigationBarType.fixed, // Asegura que todos los ítems sean visibles y no se desplacen
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catalogo'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),

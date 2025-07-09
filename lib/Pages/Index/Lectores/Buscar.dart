@@ -4,7 +4,7 @@ import 'package:spotibook2/Pages/Index/Lectores/Perfil.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Biblioteca.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
-import 'package:spotibook2/Pages/Index/Settings/Configuracion.dart';
+import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionLec.dart';
 import 'package:spotibook2/Services/Firestore_service.dart'; // Importar FirestoreService
 import 'package:firebase_auth/firebase_auth.dart'; // Necesario para obtener el usuario actual
 import 'package:spotibook2/Pages/Index/Lectores/ModuloLec.dart'; // Import para ModuloLec
@@ -172,7 +172,7 @@ class _BuscarState extends State<Buscar> {
               leading: const Icon(Icons.settings),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const Configuracion())); // Navigate to Configuracion
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfiguracionLec())); // Navigate to Configuracion
               },
             ),
             const Divider(), // Divisor visual

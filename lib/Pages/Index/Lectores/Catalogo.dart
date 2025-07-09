@@ -6,8 +6,9 @@ import 'package:spotibook2/Pages/Index/Lectores/Perfil.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Biblioteca.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Pages/Index/Lectores/ModuloLec.dart'; // Asegúrate de que este import exista
-import 'package:spotibook2/Pages/Index/Settings/Configuracion.dart';
+import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionLec.dart';
 import 'package:spotibook2/Services/Firestore_service.dart'; // Importa FirestoreService
+import 'package:spotibook2/Pages/Index/Foros/ForosporUsuario/ForosLectores.dart'; 
 
 class Catalogo extends StatefulWidget {
   const Catalogo({super.key});
@@ -336,9 +337,8 @@ class _CatalogoState extends State<Catalogo> {
               title: const Text('Foros'),
               leading: const Icon(Icons.forum),
               onTap: () {
-                Navigator.pop(context);
-                print("Foros");
-                // TODO: Navegar a la página de foros
+                Navigator.pop(context); // Close the drawer
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ForosLectores())); 
               },
             ),
             ListTile(
@@ -346,7 +346,7 @@ class _CatalogoState extends State<Catalogo> {
               leading: const Icon(Icons.settings),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const Configuracion())); // Navigate to Configuracion
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfiguracionLec())); // Navigate to Configuracion
               },
             ),
             const Divider(), // Divisor visual

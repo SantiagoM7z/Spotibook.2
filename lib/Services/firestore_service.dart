@@ -6,11 +6,11 @@ class FirestoreService {
 
   // * Guardar los datos base de CUALQUIER usuario en la colección 'users'
   Future<void> saveUser(
-    User user,
-    String username,
-    String userType,
-    String? profilePictureUrl,
-  ) async {
+      User user,
+      String username,
+      String userType,
+      String? profilePictureUrl,
+      ) async {
     try {
       Map<String, dynamic> userModel = {
         'uid': user.uid,
@@ -32,14 +32,14 @@ class FirestoreService {
 
   // * Guardar la información extendida de la editorial en la colección 'editoriales'
   Future<void> saveEditorialExtended(
-    User user,
-    String nombreLegal,
-    String rfc,
-    String direccion,
-    String telefono,
-    String username,
-    String? profilePictureUrl,
-  ) async {
+      User user,
+      String nombreLegal,
+      String rfc,
+      String direccion,
+      String telefono,
+      String username,
+      String? profilePictureUrl,
+      ) async {
     try {
       await saveUser(user, username, 'Editorial', profilePictureUrl); // Asegurarse de que el usuario base exista
 
@@ -109,10 +109,9 @@ class FirestoreService {
   }
 
   // * LÓGICA PARA OBTENER TODAS LAS ETIQUETAS (incluyendo ID y nombre)
-  // Asumo que 'etiquetas' y 'tags' son lo mismo, si no, renómbralas apropiadamente
   Future<List<Map<String, dynamic>>> loadTags() async {
     try {
-      QuerySnapshot querySnapshot = await _db.collection('etiquetas').get(); // Asumiendo 'etiquetas' es la colección principal para las etiquetas
+      QuerySnapshot querySnapshot = await _db.collection('etiquetas').get();
       print("Etiquetas obtenidas correctamente.");
       return querySnapshot.docs.map((doc) => {
         'id': doc.id,
@@ -125,15 +124,14 @@ class FirestoreService {
   }
 
   // * Nuevo método para guardar solicitudes de publicación de libros (usado en AgregarA)
-  // Estos libros van a la colección 'solicitudes_publicacion' con URLs de la carpeta 'Revisión' de Dropbox
   Future<void> saveBookRequest({
     required String titulo,
     required String autor,
     required String editorial,
     required String sinopsis,
-    required List<String> etiquetas, // IDs de las etiquetas
-    String? portadaUrlRevision, // URL de la portada en la carpeta 'Revisión' de Dropbox
-    String? archivoUrlRevision, // URL del archivo en la carpeta 'Revisión' de Dropbox
+    required List<String> etiquetas,
+    String? portadaUrlRevision,
+    String? archivoUrlRevision,
   }) async {
     try {
       final User? currentUser = FirebaseAuth.instance.currentUser;
@@ -148,8 +146,8 @@ class FirestoreService {
         'editorial': editorial,
         'sinopsis': sinopsis,
         'etiquetas': etiquetas,
-        'portadaUrlRevision': portadaUrlRevision, // Almacena la URL de Revisión
-        'archivoUrlRevision': archivoUrlRevision, // Almacena la URL de Revisión
+        'portadaUrlRevision': portadaUrlRevision,
+        'archivoUrlRevision': archivoUrlRevision,
         'estado': 'pendiente',
         'fechaSolicitud': FieldValue.serverTimestamp(),
       });
@@ -161,7 +159,6 @@ class FirestoreService {
   }
 
   // * Método para actualizar solicitudes de publicación de libros existentes (usado en AgregarA)
-  // Actualiza los datos de un libro en la colección 'solicitudes_publicacion'
   Future<void> updateBookRequest(String docId, Map<String, dynamic> data) async {
     try {
       await _db.collection('solicitudes_publicacion').doc(docId).update(data);
@@ -173,15 +170,14 @@ class FirestoreService {
   }
 
   // *** MÉTODOS ESPECÍFICOS PARA AgregarE (Colección 'libros_en_revision') ***
-  // Estos libros van a la colección 'libros_en_revision' con URLs de la carpeta 'Revisión' de Dropbox
   Future<void> saveBookForReview({
     required String titulo,
     required String autor,
     required String editorial,
     required String sinopsis,
     required List<String> etiquetas,
-    String? portadaUrlRevision, // URL de la portada en la carpeta 'Revisión' de Dropbox
-    String? archivoUrlRevision, // URL del archivo en la carpeta 'Revisión' de Dropbox
+    String? portadaUrlRevision,
+    String? archivoUrlRevision,
   }) async {
     try {
       final User? currentUser = FirebaseAuth.instance.currentUser;
@@ -196,8 +192,8 @@ class FirestoreService {
         'editorial': editorial,
         'sinopsis': sinopsis,
         'etiquetas': etiquetas,
-        'portadaUrlRevision': portadaUrlRevision, // Almacena la URL de Revisión
-        'archivoUrlRevision': archivoUrlRevision, // Almacena la URL de Revisión
+        'portadaUrlRevision': portadaUrlRevision,
+        'archivoUrlRevision': archivoUrlRevision,
         'estado': 'pendiente',
         'fechaEnvio': FieldValue.serverTimestamp(),
       });
@@ -209,7 +205,6 @@ class FirestoreService {
   }
 
   // * Método para actualizar libros existentes en 'libros_en_revision' (usado en AgregarE)
-  // Actualiza los datos de un libro en la colección 'libros_en_revision'
   Future<void> updateBookForReview(String docId, Map<String, dynamic> data) async {
     try {
       await _db.collection('libros_en_revision').doc(docId).update(data);
@@ -221,18 +216,16 @@ class FirestoreService {
   }
 
   // --- Métodos para la nueva colección 'libros' (libros publicados/aprobados) ---
-  // Este método sería llamado por un proceso de administración, NO por AgregarA o AgregarE
-  // Se encarga de guardar los libros YA APROBADOS con las URLs de la carpeta 'Publicaciones'
   Future<void> publishBook({
     required String titulo,
     required String autor,
-    required String uidOrigin, // UID del autor o editorial que lo subió originalmente
+    required String uidOrigin,
     required String editorial,
     required String sinopsis,
     required List<String> etiquetas,
-    required String portadaUrlPublica, // URL final de la portada desde 'Publicaciones'
-    required String archivoUrlPublico, // URL final del archivo desde 'Publicaciones'
-    required String idSolicitudOriginal, // ID del documento en solicitudes_publicacion o libros_en_revision
+    required String portadaUrlPublica,
+    required String archivoUrlPublico,
+    required String idSolicitudOriginal,
   }) async {
     try {
       await _db.collection('libros').add({
@@ -247,7 +240,7 @@ class FirestoreService {
         'fechaPublicacion': FieldValue.serverTimestamp(),
         'visualizaciones': 0,
         'calificacionPromedio': 0.0,
-        'idSolicitudOriginal': idSolicitudOriginal, // Para referencia si es necesario
+        'idSolicitudOriginal': idSolicitudOriginal,
       });
       print("Libro '$titulo' publicado con éxito en la colección 'libros'.");
     } catch (e) {
@@ -260,9 +253,13 @@ class FirestoreService {
   Future<List<Map<String, dynamic>>> getAllBooks() async {
     try {
       QuerySnapshot querySnapshot = await _db.collection('libros').orderBy('fechaPublicacion', descending: true).get();
-      return querySnapshot.docs.map((doc) => {
-        'id': doc.id,
-        ...doc.data() as Map<String, dynamic>,
+      return querySnapshot.docs.map((doc) {
+        // Garantizar que data es un Map<String, dynamic>
+        final data = doc.data() as Map<String, dynamic>?;
+        return {
+          'id': doc.id,
+          ...(data ?? {}),
+        };
       }).toList();
     } catch (e) {
       print("Error al obtener todos los libros publicados: $e");
@@ -283,10 +280,9 @@ class FirestoreService {
         final author = (book['autor'] as String? ?? '').toLowerCase();
         final editorial = (book['editorial'] as String? ?? '').toLowerCase();
         return title.contains(queryLower) ||
-              author.contains(queryLower) ||
-              editorial.contains(queryLower);
+            author.contains(queryLower) ||
+            editorial.contains(queryLower);
       }).toList();
-
     } catch (e) {
       print("Error al buscar libros publicados: $e");
       return [];
@@ -311,9 +307,13 @@ class FirestoreService {
         return [];
       }
 
-      return querySnapshot.docs.map((doc) => {
-        'id': doc.id,
-        ...doc.data() as Map<String, dynamic>,
+      return querySnapshot.docs.map((doc) {
+        // Garantizar que data es un Map<String, dynamic>
+        final data = doc.data() as Map<String, dynamic>?;
+        return {
+          'id': doc.id,
+          ...(data ?? {}),
+        };
       }).toList();
     } catch (e) {
       print("Error al obtener libros enviados para revisión por $userType $uid: $e");
@@ -322,7 +322,6 @@ class FirestoreService {
   }
 
   // --- Métodos para interacciones del usuario con libros (añadir a biblioteca, etc.) ---
-  // Estos métodos interactúan con la colección 'libros' (los publicados)
   /// Añade un libro a una categoría específica de la biblioteca de un usuario.
   Future<void> addBookToUserLibrary(String uid, String bookId, String category) async {
     try {
@@ -349,49 +348,203 @@ class FirestoreService {
     }
   }
 
-  // ╔══════════════════════════════════════════════════════════════════════════════╗
-  // ║                            CÓDIGO AGREGADO/MODIFICADO                          ║
-  // ╚══════════════════════════════════════════════════════════════════════════════╝
   /// Obtiene los detalles completos de los libros de la biblioteca de un usuario para una categoría específica.
-  /// Los IDs de los libros se leen del documento del usuario, y luego se obtienen los detalles de la colección 'libros'.
   Future<List<Map<String, dynamic>>> getUserLibraryBooks(String uid, String category) async {
     try {
-      // 1. Obtener el documento del usuario para obtener los IDs de los libros en la categoría.
       DocumentSnapshot userDoc = await _db.collection('users').doc(uid).get();
       if (!userDoc.exists) {
-        // Si el documento del usuario no existe, no hay libros en su biblioteca.
         return [];
       }
 
       final userData = userDoc.data() as Map<String, dynamic>?;
-      // 2. Verificar si el usuario tiene la categoría especificada o si está vacía.
       if (userData == null || !userData.containsKey(category)) {
         return [];
       }
 
-      // 3. Extraer la lista de IDs de libros para la categoría dada.
       List<String> bookIds = List<String>.from(userData[category] ?? []);
 
       if (bookIds.isEmpty) {
-        // Si no hay IDs de libros, regresar una lista vacía.
         return [];
       }
 
-      // 4. Obtener los documentos completos de los libros desde la colección 'libros'
-      // usando los IDs obtenidos del documento del usuario.
       QuerySnapshot booksSnapshot = await _db.collection('libros')
           .where(FieldPath.documentId, whereIn: bookIds)
           .get();
 
-      // 5. Mapear los documentos de los libros a un formato de mapa (id + datos) y devolver la lista.
-      return booksSnapshot.docs.map((doc) => {
-        'id': doc.id,
-        ...doc.data() as Map<String, dynamic>,
+      return booksSnapshot.docs.map((doc) {
+        // Garantizar que data es un Map<String, dynamic>
+        final data = doc.data() as Map<String, dynamic>?;
+        return {
+          'id': doc.id,
+          ...(data ?? {}),
+        };
       }).toList();
-
     } catch (e) {
       print("Error al obtener libros de la biblioteca ($category) para $uid: $e");
-      return []; // En caso de error, devuelve una lista vacía.
+      return [];
     }
+  }
+
+  // ╔══════════════════════════════════════════════════════════════════════════════╗
+  // ║                            MÉTODOS PARA FOROS (HILOS/POSTS)                   ║
+  // ╚══════════════════════════════════════════════════════════════════════════════╝
+
+  /// Obtiene todos los FOROS principales de la colección 'foros_de_la_comunidad'.
+  Stream<List<Map<String, dynamic>>> getAllForums() {
+    return _db.collection('foros_de_la_comunidad')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        // Obtener los datos como Map<String, dynamic> directamente.
+        // Si doc.data() es null, se usará un mapa vacío.
+        final data = doc.data() as Map<String, dynamic>?;
+        return {
+          'id': doc.id,
+          ...(data ?? {}), // Usar el operador de propagación nulo-consciente
+        };
+      }).toList();
+    });
+  }
+
+  /// Obtiene todos los HILOS/POSTS de la subcolección 'hilos' de CUALQUIER foro.
+  /// Requiere un índice de grupo de colecciones para 'hilos' en Firestore.
+  Stream<List<Map<String, dynamic>>> getThreadsCollectionGroup() {
+    return _db.collectionGroup('hilos')
+        .orderBy('fechacreacion', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        // Obtener los datos como Map<String, dynamic> directamente.
+        // Si doc.data() es null, se usará un mapa vacío.
+        final data = doc.data() as Map<String, dynamic>?;
+        // Parsear la ruta para obtener el forumId de forma explícita
+        final pathSegments = doc.reference.path.split('/');
+        final forumId = pathSegments.length >= 2 ? pathSegments[1] : null; // Asumiendo estructura "coleccion/documento/subcoleccion/documento"
+
+        return {
+          'id': doc.id, // ID del hilo
+          'forumId': forumId, // Usar el forumId extraído
+          ...(data ?? {}), // Usar el operador de propagación nulo-consciente
+        };
+      }).toList();
+    });
+  }
+
+  /// Obtiene los detalles de un hilo/post específico dentro de un foro específico.
+  Future<Map<String, dynamic>?> getThreadDetails(String forumId, String threadId) async {
+    try {
+      DocumentSnapshot doc = await _db.collection('foros_de_la_comunidad')
+          .doc(forumId)
+          .collection('hilos')
+          .doc(threadId)
+          .get();
+
+      if (doc.exists) {
+        // Si doc.exists es true, doc.data() no será null y será de tipo Map<String, dynamic>.
+        final data = doc.data() as Map<String, dynamic>;
+        return {
+          'id': doc.id,
+          'forumId': forumId,
+          ...data,
+        };
+      }
+      return null;
+    } catch (e) {
+      print("Error al obtener detalles del hilo $threadId en foro $forumId: $e");
+      return null;
+    }
+  }
+
+  /// Crea un nuevo foro principal en la colección 'foros_de_la_comunidad'.
+  Future<String?> createForum({
+    required String nombreForo,
+    required String creadorForoName,
+    required String creadorForoUid,
+  }) async {
+    try {
+      DocumentReference docRef = await _db.collection('foros_de_la_comunidad').add({
+        'nombre_foro': nombreForo,
+        'creador_foro_name': creadorForoName,
+        'creador_foro_uid': creadorForoUid,
+        'fecha_creacion_foro': FieldValue.serverTimestamp(),
+        'miembros_foro': [creadorForoUid],
+      });
+      print("Foro principal creado con ID: ${docRef.id}.");
+      return docRef.id;
+    } catch (e) {
+      print("Error al crear foro principal: $e");
+      return null;
+    }
+  }
+
+  /// Crea un nuevo hilo/post dentro de la subcolección 'hilos' de un foro específico.
+  Future<String?> createThread({
+    required String forumId,
+    required String titulo,
+    required String contenido,
+    required String autorpostname,
+    required String uidcreador,
+  }) async {
+    try {
+      DocumentReference docRef = await _db
+          .collection('foros_de_la_comunidad')
+          .doc(forumId)
+          .collection('hilos')
+          .add({
+        'titulo': titulo,
+        'contenido': contenido,
+        'autorpostname': autorpostname,
+        'uidcreador': uidcreador,
+        'fechacreacion': FieldValue.serverTimestamp(),
+      });
+      print("Hilo/Post creado con ID: ${docRef.id} en foro $forumId.");
+      return docRef.id;
+    } catch (e) {
+      print("Error al crear hilo/post en foro $forumId: $e");
+      return null;
+    }
+  }
+
+  /// Añade un comentario a la subcolección 'comentarios' de un hilo/post específico dentro de un foro.
+  Future<void> addCommentToThread({
+    required String forumId,
+    required String threadId,
+    required String texto,
+    required String autorcomentarioname,
+    required String uidcomentario,
+  }) async {
+    try {
+      await _db
+          .collection('foros_de_la_comunidad')
+          .doc(forumId)
+          .collection('hilos')
+          .doc(threadId)
+          .collection('comentarios')
+          .add({
+        'texto': texto,
+        'autorcomentarioname': autorcomentarioname,
+        'uidcomentario': uidcomentario,
+        'publicacion': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print("Error al enviar comentario al hilo $threadId en foro $forumId: $e");
+    }
+  }
+
+  /// Obtiene los comentarios en tiempo real de un hilo/post específico dentro de un foro.
+  Stream<List<Map<String, dynamic>>> getCommentsForThread(String forumId, String threadId) {
+    return _db
+        .collection('foros_de_la_comunidad')
+        .doc(forumId)
+        .collection('hilos')
+        .doc(threadId)
+        .collection('comentarios')
+        .orderBy('publicacion', descending: false)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+          // Obtener los datos como Map<String, dynamic> directamente, o un mapa vacío si es null
+          final data = doc.data() as Map<String, dynamic>?;
+          return data ?? {}; // Retornar el mapa, o un mapa vacío si es nulo
+        }).toList());
   }
 }

@@ -5,9 +5,10 @@ import 'package:spotibook2/Pages/Index/Lectores/Buscar.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Catalogo.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Biblioteca.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Notificaciones.dart';
-import 'package:spotibook2/Pages/Index/Settings/Configuracion.dart';
+import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionLec.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
+import 'package:spotibook2/Pages/Index/Foros/ForosporUsuario/ForosLectores.dart';
 
 class Perfil extends StatefulWidget {
   const Perfil({super.key});
@@ -441,9 +442,8 @@ class _PerfilState extends State<Perfil> {
               title: const Text('Foros'),
               leading: const Icon(Icons.forum),
               onTap: () {
-                Navigator.pop(context);
-                print("Foros");
-                // TODO: Navegar a la página de foros
+                Navigator.pop(context); // Close the drawer
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ForosLectores())); 
               },
             ),
             ListTile(
@@ -451,7 +451,7 @@ class _PerfilState extends State<Perfil> {
               leading: const Icon(Icons.settings),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const Configuracion())); // Navigate to Configuracion
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfiguracionLec())); // Navigate to Configuracion
               },
             ),
             const Divider(), // Divisor visual

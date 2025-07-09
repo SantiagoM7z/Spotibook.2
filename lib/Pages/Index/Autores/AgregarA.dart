@@ -9,7 +9,7 @@ import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
 import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart';
 import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
 import 'package:spotibook2/Pages/Index/Autores/PerfilA.dart';
-import 'package:spotibook2/Pages/Index/Settings/Configuracion.dart';
+import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionAut.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Services/firestore_service.dart';
@@ -706,7 +706,7 @@ class _AgregarAState extends State<AgregarA> {
               leading: const Icon(Icons.settings),
               onTap: () {
                 Navigator.pop(context); // Cierra el drawer
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const Configuracion()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfiguracionAut()));
               },
             ),
             const Divider(), // Divisor visual

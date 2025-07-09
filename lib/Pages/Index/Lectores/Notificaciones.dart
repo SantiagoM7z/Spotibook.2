@@ -4,8 +4,9 @@ import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Index/Lectores/Buscar.dart'; 
 import 'package:spotibook2/Pages/Index/Lectores/Perfil.dart'; 
 import 'package:spotibook2/Pages/Index/Lectores/Biblioteca.dart'; 
-import 'package:spotibook2/Pages/Index/Settings/Configuracion.dart'; 
+import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionLec.dart'; 
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
+import 'package:spotibook2/Pages/Index/Foros/ForosporUsuario/ForosLectores.dart'; 
 
 class Notificaciones extends StatefulWidget {
   const Notificaciones({super.key});
@@ -91,11 +92,10 @@ class _NotificacionesState extends State<Notificaciones> {
             ),
             ListTile(
               title: const Text('Foros'),
-              leading: const Icon(Icons.forum), 
+              leading: const Icon(Icons.forum),
               onTap: () {
-                Navigator.pop(context);
-                print("Navegar a Foros");
-                // TODO: Aquí iría la navegación a la página de foros
+                Navigator.pop(context); // Close the drawer
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ForosLectores())); 
               },
             ),
             ListTile(
@@ -103,7 +103,7 @@ class _NotificacionesState extends State<Notificaciones> {
               leading: const Icon(Icons.settings), 
               onTap: () {
                 Navigator.pop(context); 
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const Configuracion()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfiguracionLec()));
               },
             ),
             const Divider(), // Divisor visual para separar opciones

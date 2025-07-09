@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
+import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart'; // Para navegar de vuelta al CatalogoA
 import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart'; // Para navegar a BuscarA
 import 'package:spotibook2/Pages/Index/Autores/PerfilA.dart'; // Para navegar a PerfilA
 import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart'; // Para navegar a BibliotecaA
 import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart'; // Para navegar a AgregarA
-import 'package:spotibook2/Pages/Index/Settings/Configuracion.dart'; // Para navegar a Configuracion
+import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionAut.dart'; // Para navegar a Configuracion
 import 'package:spotibook2/Pages/Inicio/SingIn.dart'; // Para Cerrar sesión
-import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart'; // Para navegar de vuelta al CatalogoA
+import 'package:spotibook2/Pages/Index/Foros/ForosporUsuario/ForosAutores.dart'; // Para navegar a Foros
 
 class NotificacionesA extends StatefulWidget {
   const NotificacionesA({super.key});
@@ -129,9 +130,8 @@ class _NotificacionesAState extends State<NotificacionesA> {
               title: const Text('Foros'),
               leading: const Icon(Icons.forum),
               onTap: () {
-                Navigator.pop(context); // Cierra el drawer
-                print("Navegar a Foros");
-                // TODO: Aquí iría la navegación a la página de foros
+                Navigator.pop(context); // Close the drawer
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ForosAutores())); 
               },
             ),
             ListTile(
@@ -139,7 +139,7 @@ class _NotificacionesAState extends State<NotificacionesA> {
               leading: const Icon(Icons.settings),
               onTap: () {
                 Navigator.pop(context); // Cierra el drawer
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const Configuracion())); // Navega a la página de Configuración
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfiguracionAut())); // Navega a la página de Configuración
               },
             ),
             const Divider(), // Divisor visual para separar opciones

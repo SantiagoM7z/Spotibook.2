@@ -5,7 +5,7 @@ import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
 import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart';
-import 'package:spotibook2/Pages/Index/Settings/Configuracion.dart'; // Importar Configuracion si la usan los autores
+import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionAut.dart'; // Importar Configuracion si la usan los autores
 // import 'package:spotibook2/Services/Firestore_service.dart'; // Si vas a buscar en Firestore
 
 class BuscarA extends StatefulWidget {
@@ -190,7 +190,7 @@ class _BuscarAState extends State<BuscarA> {
               leading: const Icon(Icons.settings),
               onTap: () {
                 Navigator.pop(context); // Cierra el drawer
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const Configuracion()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfiguracionAut()));
               },
             ),
             const Divider(), // Divisor visual
