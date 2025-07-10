@@ -1,9 +1,7 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
 import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart';
@@ -13,13 +11,11 @@ import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/Configur
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Services/firestore_service.dart';
-import 'package:spotibook2/Services/DropboxConfig.dart';
+import 'package:spotibook2/Services/DropboxService.dart'; // Importar correctamente DropboxService
 
 class AgregarA extends StatefulWidget {
   final Map<String, dynamic>? bookToEdit;
-
   const AgregarA({super.key, this.bookToEdit});
-
   @override
   State<AgregarA> createState() => _AgregarAState();
 }
@@ -28,24 +24,20 @@ class _AgregarAState extends State<AgregarA> {
   final _formKey = GlobalKey<FormState>();
   final FirestoreService _firestoreService = FirestoreService();
   final DropboxService _dropboxService = DropboxService();
-  final int _selectedIndex = 2; // Asegúrate de que este índice sea el correcto para la navegación.
-
-  // Controladores
+  final int _selectedIndex = 2;
   final TextEditingController tituloController = TextEditingController();
   final TextEditingController autorController = TextEditingController();
   final TextEditingController editorialController = TextEditingController();
   final TextEditingController sinopsisController = TextEditingController();
 
-  // Estados
   bool isFormValid = false;
   bool isUploading = false;
-  String? imagePath; // Ruta del archivo de imagen recién seleccionada
-  String? filePath; // Ruta del archivo de libro recién seleccionado
-  String? _currentCoverImageUrl; // URL de la portada existente (si estamos editando)
-  String? _currentFileUrl; // URL del archivo de libro existente (si estamos editando)
-
-  List<String> selectedTags = []; // Almacena solo los IDs de las etiquetas seleccionadas
-  List<Map<String, dynamic>> allTags = []; // Almacena mapas con 'id' y 'nombre'
+  String? imagePath;
+  String? filePath;
+  String? _currentCoverImageUrl;
+  String? _currentFileUrl;
+  List<String> selectedTags = [];
+  List<Map<String, dynamic>> allTags = [];
   String? fileError;
   String? imageError;
 
@@ -69,13 +61,11 @@ class _AgregarAState extends State<AgregarA> {
   void initState() {
     super.initState();
     _loadTags();
-    // Inicializar campos si bookToEdit es provisto (modo edición)
     if (widget.bookToEdit != null) {
       tituloController.text = widget.bookToEdit!['titulo'] ?? '';
       autorController.text = widget.bookToEdit!['autor'] ?? '';
       editorialController.text = widget.bookToEdit!['editorial'] ?? '';
       sinopsisController.text = widget.bookToEdit!['sinopsis'] ?? '';
-      // Asegúrate de que las etiquetas se manejen como List<String>
       selectedTags = List<String>.from(widget.bookToEdit!['etiquetas'] ?? []);
       _currentCoverImageUrl = widget.bookToEdit!['portadaUrlRevision'];
       _currentFileUrl = widget.bookToEdit!['archivoUrlRevision'];
@@ -97,7 +87,7 @@ class _AgregarAState extends State<AgregarA> {
       setState(() {
         allTags = tags;
       });
-      _validateForm(); // Validar formulario después de cargar las etiquetas
+      _validateForm();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -111,21 +101,19 @@ class _AgregarAState extends State<AgregarA> {
   }
 
   void _validateForm() {
-    // Es crucial llamar a setState aquí para que la UI se actualice
-    // y el botón de enviar se habilite/deshabilite correctamente.
     setState(() {
       isFormValid = _formKey.currentState?.validate() == true &&
           selectedTags.isNotEmpty &&
-          // Comprobar si se seleccionó una nueva imagen O si ya existe una URL de portada
-          (imagePath != null || (_currentCoverImageUrl != null && _currentCoverImageUrl!.isNotEmpty)) &&
-          // Comprobar si se seleccionó un nuevo archivo O si ya existe una URL de archivo
-          (filePath != null || (_currentFileUrl != null && _currentFileUrl!.isNotEmpty));
-
-      // Actualizar mensajes de error visuales
-      imageError = (imagePath == null && (_currentCoverImageUrl == null || _currentCoverImageUrl!.isEmpty))
+          (imagePath != null ||
+              (_currentCoverImageUrl != null && _currentCoverImageUrl!.isNotEmpty)) &&
+          (filePath != null ||
+              (_currentFileUrl != null && _currentFileUrl!.isNotEmpty));
+      imageError = (imagePath == null &&
+              (_currentCoverImageUrl == null || _currentCoverImageUrl!.isEmpty))
           ? "Debes seleccionar una portada"
           : null;
-      fileError = (filePath == null && (_currentFileUrl == null || _currentFileUrl!.isEmpty))
+      fileError = (filePath == null &&
+              (_currentFileUrl == null || _currentFileUrl!.isEmpty))
           ? "Debes subir un archivo PDF o EPUB"
           : null;
     });
@@ -135,13 +123,12 @@ class _AgregarAState extends State<AgregarA> {
     try {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
       if (pickedFile != null) {
         setState(() {
           imagePath = pickedFile.path;
           imageError = null;
-          _currentCoverImageUrl = null; // Borra la URL existente si seleccionamos una nueva imagen
-          _validateForm(); // Revalidar el formulario
+          _currentCoverImageUrl = null;
+          _validateForm();
         });
       }
     } catch (e) {
@@ -171,8 +158,8 @@ class _AgregarAState extends State<AgregarA> {
         setState(() {
           filePath = result.files.single.path;
           fileError = null;
-          _currentFileUrl = null; // Borra la URL existente si seleccionamos un nuevo archivo
-          _validateForm(); // Revalidar el formulario
+          _currentFileUrl = null;
+          _validateForm();
         });
       }
     } catch (e) {
@@ -185,19 +172,19 @@ class _AgregarAState extends State<AgregarA> {
 
   Future<void> _submitForm() async {
     if (!isFormValid) {
-      // Forzar la validación para mostrar los errores si el botón está deshabilitado.
       _formKey.currentState?.validate();
       _validateForm();
       return;
     }
-
     setState(() => isUploading = true);
 
     try {
       final confirm = await showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(widget.bookToEdit != null ? 'Confirmar Edición' : 'Solicitar Publicación'),
+          title: Text(widget.bookToEdit != null
+              ? 'Confirmar Edición'
+              : 'Solicitar Publicación'),
           content: Text(widget.bookToEdit != null
               ? '¿Estás seguro que deseas actualizar la información de este libro?'
               : '¿Estás seguro que deseas solicitar la publicación de este libro?'),
@@ -224,39 +211,32 @@ class _AgregarAState extends State<AgregarA> {
 
       String? finalImageUrl = _currentCoverImageUrl;
       String? finalFileUrl = _currentFileUrl;
-
-      // Subir nueva imagen si se seleccionó una
       if (imagePath != null) {
         final imageFile = File(imagePath!);
         final imageName =
             'portada_revision_${DateTime.now().millisecondsSinceEpoch}${path.extension(imagePath!)}';
-        // Subir a la carpeta de Revisiones
         finalImageUrl = await _dropboxService.uploadFile(imageFile, '/Revisiones/$imageName');
       }
 
-      // Subir nuevo archivo si se seleccionó uno
       if (filePath != null) {
         final bookFile = File(filePath!);
         final bookName =
             'libro_revision_${DateTime.now().millisecondsSinceEpoch}${path.extension(filePath!)}';
-        // Subir a la carpeta de Revisiones
         finalFileUrl = await _dropboxService.uploadFile(bookFile, '/Revisiones/$bookName');
       }
 
-      // Prepara los datos del libro con los tipos correctos
       final Map<String, dynamic> bookData = {
         'titulo': tituloController.text,
         'autor': autorController.text,
         'editorial': editorialController.text,
         'sinopsis': sinopsisController.text,
-        'etiquetas': selectedTags, // selectedTags ya es List<String>
+        'etiquetas': selectedTags,
         'portadaUrlRevision': finalImageUrl,
         'archivoUrlRevision': finalFileUrl,
-        'lastUpdated': DateTime.now(), // Actualizar la marca de tiempo
+        'lastUpdated': DateTime.now(),
       };
 
       if (widget.bookToEdit != null && widget.bookToEdit!['id'] != null) {
-        // Actualizar solicitud de libro existente
         await _firestoreService.updateBookRequest(widget.bookToEdit!['id'], bookData);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -266,7 +246,6 @@ class _AgregarAState extends State<AgregarA> {
           ),
         );
       } else {
-        // Guardar como una nueva solicitud de publicación
         await _firestoreService.saveBookRequest(
           titulo: bookData['titulo'] as String,
           autor: bookData['autor'] as String,
@@ -286,7 +265,6 @@ class _AgregarAState extends State<AgregarA> {
         );
       }
 
-      // Navegar de vuelta a BibliotecaA después del envío/actualización exitosa
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const BibliotecaA()),
@@ -316,26 +294,38 @@ class _AgregarAState extends State<AgregarA> {
               content: SizedBox(
                 width: double.maxFinite,
                 height: MediaQuery.of(context).size.height * 0.6,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: allTags.length,
-                  itemBuilder: (context, index) {
-                    final tag = allTags[index];
-                    return CheckboxListTile(
-                      title: Text(tag['nombre'] ?? 'Nombre no disponible'),
-                      value: tempSelected.contains(tag['id']),
-                      onChanged: (bool? value) {
-                        setStateDialog(() {
-                          if (value == true) {
-                            tempSelected.add(tag['id']);
-                          } else {
-                            tempSelected.remove(tag['id']);
-                          }
-                        });
-                      },
-                    );
-                  },
-                ),
+                child: allTags.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "No hay etiquetas disponibles. Asegúrate de que estén cargadas.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: allTags.length,
+                        itemBuilder: (context, index) {
+                          final tag = allTags[index];
+                          return CheckboxListTile(
+                            title: Text(
+                              tag['nombre'] != null && tag['nombre'].isNotEmpty
+                                  ? tag['nombre']
+                                  : 'Nombre no disponible', // Modificado aquí
+                            ),
+                            value: tempSelected.contains(tag['id']),
+                            onChanged: (bool? value) {
+                              setStateDialog(() {
+                                if (value == true) {
+                                  tempSelected.add(tag['id']);
+                                } else {
+                                  tempSelected.remove(tag['id']);
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
               ),
               actions: [
                 TextButton(
@@ -348,7 +338,7 @@ class _AgregarAState extends State<AgregarA> {
                       selectedTags = tempSelected;
                     });
                     Navigator.pop(context);
-                    _validateForm(); // Revalidar el formulario
+                    _validateForm();
                   },
                   child: const Text('Aceptar'),
                 ),
@@ -373,12 +363,11 @@ class _AgregarAState extends State<AgregarA> {
       ),
       body: Form(
         key: _formKey,
-        onChanged: _validateForm, // Validar formulario ante cualquier cambio
+        onChanged: _validateForm,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: ListView(
             children: <Widget>[
-              // Selector de imagen
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -396,20 +385,22 @@ class _AgregarAState extends State<AgregarA> {
                         border: Border.all(
                             color: imageError != null ? Colors.red : Colors.grey[300]!,
                             width: 1.5),
-                        // Mostrar la imagen recién seleccionada o la existente
                         image: imagePath != null
                             ? DecorationImage(
                                 image: FileImage(File(imagePath!)),
                                 fit: BoxFit.cover,
                               )
-                            : _currentCoverImageUrl != null && _currentCoverImageUrl!.isNotEmpty
+                            : _currentCoverImageUrl != null &&
+                                    _currentCoverImageUrl!.isNotEmpty
                                 ? DecorationImage(
                                     image: NetworkImage(_currentCoverImageUrl!),
                                     fit: BoxFit.cover,
                                   )
                                 : null,
                       ),
-                      child: (imagePath == null && (_currentCoverImageUrl == null || _currentCoverImageUrl!.isEmpty))
+                      child: (imagePath == null &&
+                              (_currentCoverImageUrl == null ||
+                                  _currentCoverImageUrl!.isEmpty))
                           ? Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -504,7 +495,7 @@ class _AgregarAState extends State<AgregarA> {
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: selectedTags.isEmpty
-                              ? Colors.red // Borde rojo si no hay etiquetas seleccionadas
+                              ? Colors.red
                               : Colors.grey[300]!,
                           width: 1.0,
                         ),
@@ -527,7 +518,7 @@ class _AgregarAState extends State<AgregarA> {
                       ),
                     ),
                   ),
-                  if (selectedTags.isEmpty && !isFormValid) // Mostrar error solo si está vacío y no es válido el formulario
+                  if (selectedTags.isEmpty && !isFormValid)
                     const Padding(
                       padding: EdgeInsets.only(top: 4.0),
                       child: Text(
@@ -542,20 +533,23 @@ class _AgregarAState extends State<AgregarA> {
                         spacing: 8.0,
                         runSpacing: 4.0,
                         children: selectedTags.map((tagId) {
-                          // Busca el nombre de la etiqueta usando el ID
                           var tag = allTags.firstWhere(
                             (tag) => tag['id'] == tagId,
                             orElse: () =>
                                 {'nombre': 'Etiqueta no encontrada', 'id': tagId},
                           );
                           return Chip(
-                            label: Text(tag['nombre'] ?? 'Sin Nombre'),
+                            label: Text(
+                              tag['nombre'] != null && tag['nombre'].isNotEmpty
+                                  ? tag['nombre']
+                                  : 'Sin Nombre', // Modificado aquí
+                            ),
                             deleteIcon: const Icon(Icons.close, size: 18),
                             onDeleted: () {
                               setState(() {
                                 selectedTags.remove(tagId);
                               });
-                              _validateForm(); // Revalidar el formulario
+                              _validateForm();
                             },
                           );
                         }).toList(),
@@ -611,10 +605,9 @@ class _AgregarAState extends State<AgregarA> {
                         const Icon(Icons.upload_file, color: Color(0xff2E4D4D)),
                         const SizedBox(width: 8),
                         Text(
-                          // Mostrar el nombre del archivo recién seleccionado o de la URL existente
                           filePath == null
                               ? (_currentFileUrl != null && _currentFileUrl!.isNotEmpty
-                                  ? path.basename(_currentFileUrl!.split('?')[0]) // Extraer nombre de archivo de la URL
+                                  ? path.basename(_currentFileUrl!.split('?')[0])
                                   : "Subir archivo (PDF/ePUB)")
                               : path.basename(filePath!),
                           style: const TextStyle(color: Colors.black),
@@ -642,7 +635,7 @@ class _AgregarAState extends State<AgregarA> {
                     onPressed: isUploading ? null : (isFormValid ? _submitForm : null),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isFormValid ? const Color(0xff2E4D4D) : Colors.grey,
-                      foregroundColor: Colors.white, // Color del texto del botón
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
@@ -696,7 +689,7 @@ class _AgregarAState extends State<AgregarA> {
               title: const Text('Mis Estadísticas'),
               leading: const Icon(Icons.insights),
               onTap: () {
-                Navigator.pop(context); // Cierra el drawer
+                Navigator.pop(context);
                 print("Navegar a Mis Estadísticas de Autor");
                 // TODO: Navegar a una página de estadísticas del autor
               },
@@ -705,11 +698,11 @@ class _AgregarAState extends State<AgregarA> {
               title: const Text('Configuración'),
               leading: const Icon(Icons.settings),
               onTap: () {
-                Navigator.pop(context); // Cierra el drawer
+                Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfiguracionAut()));
               },
             ),
-            const Divider(), // Divisor visual
+            const Divider(),
             ListTile(
               leading: const Icon(Icons.exit_to_app),
               title: const Text('Cerrar sesión'),
@@ -742,104 +735,5 @@ class _AgregarAState extends State<AgregarA> {
         ],
       ),
     );
-  }
-}
-
-// DropboxService se mantiene igual, ya que sus métodos están bien definidos
-// para la subida y generación de enlaces de Dropbox.
-// Sin embargo, por consistencia, deberías tener esta clase en un archivo separado
-// como Services/Dropbox_Service.dart si no la tienes ya.
-class DropboxService {
-  // Esta clase debería estar idealmente en su propio archivo, como Services/Dropbox_Service.dart
-  // y ser importada en AgregarA.dart
-  Future<String> uploadFile(File file, String dropboxPath) async {
-    try {
-      final uploadResponse = await http.post(
-        Uri.parse('https://content.dropboxapi.com/2/files/upload'),
-        headers: {
-          'Authorization': 'Bearer ${DropboxConfig.token}',
-          'Content-Type': 'application/octet-stream',
-          'Dropbox-API-Arg': jsonEncode({
-            'path': dropboxPath,
-            'mode': 'add',
-            'autorename': true,
-            'mute': false
-          })
-        },
-        body: await file.readAsBytes(),
-      );
-
-      if (uploadResponse.statusCode != 200) {
-        throw Exception('Error al subir archivo a Dropbox: ${uploadResponse.body}');
-      }
-
-      return await _getSharedLink(dropboxPath);
-    } catch (e) {
-      throw Exception('Error en Dropbox al subir/obtener URL: ${e.toString()}');
-    }
-  }
-
-  Future<String> _getSharedLink(String dropboxPath) async {
-    try {
-      final response = await http.post(
-        Uri.parse('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings'),
-        headers: {
-          'Authorization': 'Bearer ${DropboxConfig.token}',
-          'Content-Type': 'application/json'
-        },
-        body: jsonEncode({
-          'path': dropboxPath,
-          'settings': {'requested_visibility': 'public'}
-        }),
-      );
-
-      if (response.statusCode == 409) {
-        // El enlace ya existe, intentar obtenerlo
-        return await _getExistingSharedLink(dropboxPath);
-      } else if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return json['url'].replaceFirst('?dl=0', '?raw=1');
-      } else {
-        throw Exception('Error al generar enlace de Dropbox: ${response.body}');
-      }
-    } catch (e) {
-      throw Exception('Error al obtener enlace compartido de Dropbox: ${e.toString()}');
-    }
-  }
-
-  Future<String> _getExistingSharedLink(String dropboxPath) async {
-    try {
-      final response = await http.post(
-        Uri.parse('https://api.dropboxapi.com/2/sharing/list_shared_links'),
-        headers: {
-          'Authorization': 'Bearer ${DropboxConfig.token}',
-          'Content-Type': 'application/json'
-        },
-        body: jsonEncode({
-          'path': dropboxPath,
-          'direct_only': true
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        final results = jsonResponse['links'] as List? ?? [];
-
-        if (results.isNotEmpty) {
-          final firstResult = results.first;
-          if (firstResult is Map<String, dynamic> && firstResult.containsKey('url')) {
-            return firstResult['url'].replaceFirst('?dl=0', '?raw=1');
-          } else {
-            throw Exception('El enlace existente no tiene URL válida');
-          }
-        } else {
-          throw Exception('No se encontraron enlaces existentes para $dropboxPath');
-        }
-      } else {
-        throw Exception('Error al listar enlaces existentes de Dropbox: ${response.body}');
-      }
-    } catch (e) {
-      throw Exception('Error al obtener enlace existente de Dropbox: ${e.toString()}');
-    }
   }
 }

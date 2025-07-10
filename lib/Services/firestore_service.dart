@@ -6,11 +6,11 @@ class FirestoreService {
 
   // * Guardar los datos base de CUALQUIER usuario en la colección 'users'
   Future<void> saveUser(
-      User user,
-      String username,
-      String userType,
-      String? profilePictureUrl,
-      ) async {
+    User user,
+    String username,
+    String userType,
+    String? profilePictureUrl,
+  ) async {
     try {
       Map<String, dynamic> userModel = {
         'uid': user.uid,
@@ -18,7 +18,7 @@ class FirestoreService {
         'username': username,
         'userType': userType,
         'profilePictureUrl': profilePictureUrl,
-        'verificado': false, // Asumiendo estado de verificación inicial
+        'verificado': false,
         'creadoEn': FieldValue.serverTimestamp(),
       };
 
@@ -32,16 +32,16 @@ class FirestoreService {
 
   // * Guardar la información extendida de la editorial en la colección 'editoriales'
   Future<void> saveEditorialExtended(
-      User user,
-      String nombreLegal,
-      String rfc,
-      String direccion,
-      String telefono,
-      String username,
-      String? profilePictureUrl,
-      ) async {
+    User user,
+    String nombreLegal,
+    String rfc,
+    String direccion,
+    String telefono,
+    String username,
+    String? profilePictureUrl,
+  ) async {
     try {
-      await saveUser(user, username, 'Editorial', profilePictureUrl); // Asegurarse de que el usuario base exista
+      await saveUser(user, username, 'Editorial', profilePictureUrl);
 
       Map<String, dynamic> editorialExtendedModel = {
         'uid': user.uid,
@@ -60,7 +60,7 @@ class FirestoreService {
     }
   }
 
-  // * Obtener el tipo de usuario (buscando principalmente en la colección 'users')
+  // * Obtener el tipo de usuario
   Future<String?> getUserType(String uid) async {
     try {
       DocumentSnapshot userDoc = await _db.collection('users').doc(uid).get();
@@ -76,7 +76,7 @@ class FirestoreService {
     }
   }
 
-  // * Método para obtener datos del usuario por UID (ahora busca principalmente en 'users')
+  // * Método para obtener datos del usuario por UID
   Future<Map<String, dynamic>?> getUserData(String uid) async {
     try {
       DocumentSnapshot userDoc = await _db.collection('users').doc(uid).get();
@@ -108,14 +108,22 @@ class FirestoreService {
     }
   }
 
-  // * LÓGICA PARA OBTENER TODAS LAS ETIQUETAS (incluyendo ID y nombre)
+  // * Lógica para obtener todas las etiquetas
   Future<List<Map<String, dynamic>>> loadTags() async {
     try {
       QuerySnapshot querySnapshot = await _db.collection('etiquetas').get();
-      print("Etiquetas obtenidas correctamente.");
-      return querySnapshot.docs.map((doc) => {
-        'id': doc.id,
-        'nombre': doc['nombre'] as String
+      print("Etiquetas obtenidas correctamente. Cantidad: ${querySnapshot.docs.length}");
+
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>?;
+        final String nombre = data?['nombre'] as String? ?? 'Nombre no especificado';
+
+        final Map<String, dynamic> tagData = {
+          'id': doc.id,
+          'nombre': nombre,
+        };
+        print("Etiqueta cargada: $tagData");
+        return tagData;
       }).toList();
     } catch (e) {
       print("Error al obtener etiquetas: $e");
@@ -123,7 +131,7 @@ class FirestoreService {
     }
   }
 
-  // * Nuevo método para guardar solicitudes de publicación de libros (usado en AgregarA)
+  // * Nuevo método para guardar solicitudes de publicación de libros
   Future<void> saveBookRequest({
     required String titulo,
     required String autor,
@@ -158,7 +166,7 @@ class FirestoreService {
     }
   }
 
-  // * Método para actualizar solicitudes de publicación de libros existentes (usado en AgregarA)
+  // * Método para actualizar solicitudes de publicación de libros existentes
   Future<void> updateBookRequest(String docId, Map<String, dynamic> data) async {
     try {
       await _db.collection('solicitudes_publicacion').doc(docId).update(data);
@@ -169,7 +177,7 @@ class FirestoreService {
     }
   }
 
-  // *** MÉTODOS ESPECÍFICOS PARA AgregarE (Colección 'libros_en_revision') ***
+  // * Metodos especificos para AgregarE
   Future<void> saveBookForReview({
     required String titulo,
     required String autor,
@@ -204,7 +212,7 @@ class FirestoreService {
     }
   }
 
-  // * Método para actualizar libros existentes en 'libros_en_revision' (usado en AgregarE)
+  // * Método para actualizar libros existentes en 'libros_en_revision'
   Future<void> updateBookForReview(String docId, Map<String, dynamic> data) async {
     try {
       await _db.collection('libros_en_revision').doc(docId).update(data);
@@ -386,7 +394,7 @@ class FirestoreService {
   }
 
   // ╔══════════════════════════════════════════════════════════════════════════════╗
-  // ║                            MÉTODOS PARA FOROS (HILOS/POSTS)                   ║
+  // ║                            MÉTODOS PARA FOROS (HILOS/POSTS)                    ║
   // ╚══════════════════════════════════════════════════════════════════════════════╝
 
   /// Obtiene todos los FOROS principales de la colección 'foros_de_la_comunidad'.
@@ -542,9 +550,9 @@ class FirestoreService {
         .orderBy('publicacion', descending: false)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) {
-          // Obtener los datos como Map<String, dynamic> directamente, o un mapa vacío si es null
-          final data = doc.data() as Map<String, dynamic>?;
-          return data ?? {}; // Retornar el mapa, o un mapa vacío si es nulo
-        }).toList());
+              // Obtener los datos como Map<String, dynamic> directamente, o un mapa vacío si es null
+              final data = doc.data() as Map<String, dynamic>?;
+              return data ?? {}; // Retornar el mapa, o un mapa vacío si es nulo
+            }).toList());
   }
 }

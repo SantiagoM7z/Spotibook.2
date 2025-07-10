@@ -185,9 +185,9 @@ class _VerificacionesState extends State<Verificaciones> {
             ListTile(
               title: Text('Cerrar sesión'),
               onTap: () async {
-                await AuthService().signOut(); 
-                Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => SingIn()),
-                (route) => false, 
+                await AuthService().signOut();
+                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => SingIn()),
+                    (route) => false,
                 );
               },
             ),
