@@ -157,7 +157,7 @@ class FirestoreService {
         'portadaUrlRevision': portadaUrlRevision,
         'archivoUrlRevision': archivoUrlRevision,
         'estado': 'pendiente',
-        'fechaSolicitud': FieldValue.serverTimestamp(),
+        'fechaSolicitud': FieldValue.serverTimestamp(), // *** CAMBIO: Asegurado que se use fechaSolicitud ***
       });
       print("Solicitud de publicación de libro guardada con éxito en Firestore (para revisión).");
     } catch (e) {
@@ -177,7 +177,9 @@ class FirestoreService {
     }
   }
 
-  // * Metodos especificos para AgregarE
+  // * Metodos especificos para AgregarE (Editoriales - se asume que también usan 'solicitudes_publicacion')
+  // Decidí unificar 'libros_en_revision' con 'solicitudes_publicacion' para simplificar el flujo
+  // Si tienes una razón específica para mantener 'libros_en_revision' separado, házmelo saber.
   Future<void> saveBookForReview({
     required String titulo,
     required String autor,
@@ -193,8 +195,8 @@ class FirestoreService {
         throw Exception("Usuario no autenticado. No se puede guardar el libro para revisión.");
       }
 
-      await _db.collection('libros_en_revision').add({
-        'uidEditorial': currentUser.uid,
+      await _db.collection('solicitudes_publicacion').add({ // *** CAMBIO: Usando solicitudes_publicacion ***
+        'uidEditorial': currentUser.uid, // Campo para identificar al que lo sube (editorial)
         'titulo': titulo,
         'autor': autor,
         'editorial': editorial,
@@ -203,7 +205,7 @@ class FirestoreService {
         'portadaUrlRevision': portadaUrlRevision,
         'archivoUrlRevision': archivoUrlRevision,
         'estado': 'pendiente',
-        'fechaEnvio': FieldValue.serverTimestamp(),
+        'fechaSolicitud': FieldValue.serverTimestamp(), // *** CAMBIO: Usando fechaSolicitud ***
       });
       print('Libro guardado en Firestore para revisión (Editoriales).');
     } catch (e) {
@@ -212,10 +214,10 @@ class FirestoreService {
     }
   }
 
-  // * Método para actualizar libros existentes en 'libros_en_revision'
+  // * Método para actualizar libros existentes en 'solicitudes_publicacion' (unificado)
   Future<void> updateBookForReview(String docId, Map<String, dynamic> data) async {
     try {
-      await _db.collection('libros_en_revision').doc(docId).update(data);
+      await _db.collection('solicitudes_publicacion').doc(docId).update(data); // *** CAMBIO: Unificado a solicitudes_publicacion ***
       print("Libro en revisión $docId actualizado con éxito en Firestore (Editoriales).");
     } catch (e) {
       print("Error al actualizar libro en revisión $docId en Firestore: $e");
@@ -224,35 +226,63 @@ class FirestoreService {
   }
 
   // --- Métodos para la nueva colección 'libros' (libros publicados/aprobados) ---
-  Future<void> publishBook({
-    required String titulo,
-    required String autor,
-    required String uidOrigin,
-    required String editorial,
-    required String sinopsis,
-    required List<String> etiquetas,
-    required String portadaUrlPublica,
-    required String archivoUrlPublico,
-    required String idSolicitudOriginal,
-  }) async {
+  // *** NUEVO MÉTODO PARA PUBLICAR LIBRO ***
+  Future<void> publishBook(Map<String, dynamic> bookData) async {
     try {
-      await _db.collection('libros').add({
-        'titulo': titulo,
-        'autor': autor,
-        'uidOrigin': uidOrigin,
-        'editorial': editorial,
-        'sinopsis': sinopsis,
-        'etiquetas': etiquetas,
-        'portadaUrlPublica': portadaUrlPublica,
-        'archivoUrlPublico': archivoUrlPublico,
-        'fechaPublicacion': FieldValue.serverTimestamp(),
-        'visualizaciones': 0,
-        'calificacionPromedio': 0.0,
-        'idSolicitudOriginal': idSolicitudOriginal,
-      });
-      print("Libro '$titulo' publicado con éxito en la colección 'libros'.");
+      // Eliminar campos que solo son para revisión si están presentes y no deben ir a 'libros'
+      bookData.remove('portadaUrlRevision');
+      bookData.remove('archivoUrlRevision');
+      bookData.remove('fechaEnvio'); // Si se usaba en solicitudes_publicacion para editoriales
+      bookData.remove('uidAutor'); // Si se usaba para autores en solicitudes_publicacion
+      bookData.remove('uidEditorial'); // Si se usaba para editoriales en solicitudes_publicacion
+
+      // Renombrar 'fechaSolicitud' a 'fechaPublicacion' y quitar 'estado' de la colección 'libros'
+      // Ya que en 'libros' todos están publicados.
+      bookData['fechaPublicacion'] = FieldValue.serverTimestamp();
+      bookData['visualizaciones'] = 0; // Inicializar visualizaciones
+      bookData['calificacionPromedio'] = 0.0; // Inicializar calificación
+
+      // Asegurarse de que los campos de URL finales sean correctos
+      // Estos ya deberían venir pre-procesados en bookData desde AoD.dart
+      // (ej. 'portadaUrl' y 'archivoUrl')
+      // Si aún vienen como 'portadaUrlRevision' y 'archivoUrlRevision', renombrarlos aquí
+      if (bookData.containsKey('portadaUrlRevision') && !bookData.containsKey('portadaUrl')) {
+        bookData['portadaUrl'] = bookData['portadaUrlRevision'];
+        bookData.remove('portadaUrlRevision');
+      }
+      if (bookData.containsKey('archivoUrlRevision') && !bookData.containsKey('archivoUrl')) {
+        bookData['archivoUrl'] = bookData['archivoUrlRevision'];
+        bookData.remove('archivoUrlRevision');
+      }
+
+
+      // Eliminar el campo 'estado' ya que en la colección 'libros' todos están publicados
+      bookData.remove('estado');
+
+
+      await _db.collection('libros').add(bookData);
+      print("Libro '${bookData['titulo'] ?? 'Desconocido'}' publicado con éxito en la colección 'libros'.");
     } catch (e) {
       print("Error al publicar el libro en Firestore: $e");
+      rethrow;
+    }
+  }
+
+  // *** NUEVO MÉTODO PARA ACTUALIZAR EL ESTADO DE LA SOLICITUD DE PUBLICACIÓN ***
+  Future<void> updateBookRequestStatus(String documentId, String newStatus, {String? motivoRechazo}) async {
+    try {
+      Map<String, dynamic> updateData = {
+        'estado': newStatus,
+        'fechaActualizacionEstado': FieldValue.serverTimestamp(),
+      };
+      if (motivoRechazo != null && motivoRechazo.isNotEmpty) {
+        updateData['motivoRechazo'] = motivoRechazo;
+      }
+
+      await _db.collection('solicitudes_publicacion').doc(documentId).update(updateData);
+      print("Estado de la solicitud $documentId actualizado a '$newStatus'.");
+    } catch (e) {
+      print("Error al actualizar el estado de la solicitud $documentId en Firestore: $e");
       rethrow;
     }
   }
@@ -298,6 +328,8 @@ class FirestoreService {
   }
 
   // * Obtiene los libros que un AUTOR/EDITORIAL ha enviado para revisión.
+  // Se asume que todas las solicitudes (sean de Autor o Editorial) van a 'solicitudes_publicacion'
+  // y se diferencian por el campo 'uidAutor' o 'uidEditorial'.
   Future<List<Map<String, dynamic>>> getMySubmittedBooks(String uid, String userType) async {
     try {
       QuerySnapshot querySnapshot;
@@ -307,9 +339,9 @@ class FirestoreService {
             .orderBy('fechaSolicitud', descending: true)
             .get();
       } else if (userType == 'Editorial') {
-        querySnapshot = await _db.collection('libros_en_revision')
+        querySnapshot = await _db.collection('solicitudes_publicacion') // *** CAMBIO: Usando solicitudes_publicacion ***
             .where('uidEditorial', isEqualTo: uid)
-            .orderBy('fechaEnvio', descending: true)
+            .orderBy('fechaSolicitud', descending: true) // *** CAMBIO: Usando fechaSolicitud ***
             .get();
       } else {
         return [];

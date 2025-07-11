@@ -6,7 +6,7 @@ import 'package:spotibook2/Pages/Index/Administradores/Foros.dart';
 import 'package:spotibook2/Pages/Index/Administradores/CentroA.dart';
 import 'package:spotibook2/Pages/Index/Administradores/AoD.dart';
 import 'package:intl/intl.dart';
-import 'package:spotibook2/Services/Auth_Service.dart'; 
+import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 
 class Verificaciones extends StatefulWidget {
@@ -22,7 +22,12 @@ class _VerificacionesState extends State<Verificaciones> {
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
   void _onItemTapped(int index) {
-    if (index == 1) {
+    // Solo navega si el índice es diferente al actual.
+    // El índice 0 es "Verificaciones", así que si ya estamos aquí, no hacemos pushReplacement.
+    if (index == 0) {
+      // Opcional: podrías agregar una lógica para refrescar la lista si el usuario toca el mismo ítem.
+      // Por ahora, no hace nada si ya está en "Verificaciones".
+    } else if (index == 1) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => Usuarios()));
     } else if (index == 2) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => Editoriales()));
@@ -30,18 +35,17 @@ class _VerificacionesState extends State<Verificaciones> {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => Foros()));
     } else if (index == 4) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => CentroA()));
-    } else {
-      setState(() {
-        _selectedIndex = index;
-      });
     }
+    // No necesitamos setState aquí porque pushReplacement reconstruye el widget destino.
   }
 
   void _abrirDetalleLibro(String documentId, Map<String, dynamic> libroData) {
     Navigator.push(
-      context, 
+      context,
       MaterialPageRoute(
-        builder: (context) => AoD(documentId: documentId, libro: libroData,),),);
+        builder: (context) => AoD(documentId: documentId, libro: libroData),
+      ),
+    );
   }
 
   @override
@@ -54,13 +58,15 @@ class _VerificacionesState extends State<Verificaciones> {
         ),
         backgroundColor: const Color(0xff2E4D4D),
         iconTheme: const IconThemeData(color: Colors.white),
-        leading: null,
+        // Puedes mantener leading: null si no quieres el botón de atrás predeterminado.
+        // Si el admin siempre entra a esta pantalla desde un flujo donde no hay "atrás", está bien.
+        leading: null, // Mantener como estaba si es la pantalla principal del admin
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore.collection('libros')
-          .where('estado', isEqualTo: 'pendiente')
-          .orderBy('fechaSubida', descending: true)
-          .snapshots(),
+        stream: _firestore.collection('solicitudes_publicacion')
+            .where('estado', isEqualTo: 'pendiente')
+            .orderBy('fechaSolicitud', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -86,8 +92,8 @@ class _VerificacionesState extends State<Verificaciones> {
             itemBuilder: (context, index) {
               final doc = snapshot.data!.docs[index];
               final data = doc.data() as Map<String, dynamic>;
-              final fechaSubida = (data['fechaSubida'] as Timestamp).toDate();
-              
+              final fechaSolicitud = (data['fechaSolicitud'] as Timestamp).toDate();
+
               return Material(
                 color: Colors.white,
                 child: InkWell(
@@ -96,12 +102,45 @@ class _VerificacionesState extends State<Verificaciones> {
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     child: Row(
                       children: [
+                        // * Previsualización de la portada
+                        if (data['portadaUrlRevision'] != null && (data['portadaUrlRevision'] as String).isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 12.0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4.0),
+                              child: Image.network(
+                                data['portadaUrlRevision'],
+                                width: 60,
+                                height: 90,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 60,
+                                    height: 90,
+                                    color: Colors.grey[200],
+                                    child: Icon(Icons.book, color: Colors.grey[400]),
+                                  );
+                                },
+                              ),
+                            ),
+                          )
+                        else
+                          // Placeholder si no hay imagen de portada o URL
+                          Padding(
+                            padding: const EdgeInsets.only(right: 12.0),
+                            child: Container(
+                              width: 60,
+                              height: 90,
+                              color: Colors.grey[200],
+                              child: Icon(Icons.book, color: Colors.grey[400]),
+                            ),
+                          ),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                data['titulo'],
+                                data['titulo'] ?? 'Título Desconocido', // Manejo de nulos
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
@@ -110,21 +149,29 @@ class _VerificacionesState extends State<Verificaciones> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
+                              // * Mostrar Autor y Editorial con manejo de nulos
                               Text(
-                                'Solicitado: ${_dateFormat.format(fechaSubida)}',
+                                'Autor: ${data['autor'] ?? 'Desconocido'}',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey[600],
                                 ),
                               ),
-                              if (data.containsKey('autor'))
+                              if (data['editorial'] != null) // Mostrar editorial solo si existe
                                 Text(
-                                  'Autor: ${data['autor']}',
+                                  'Editorial: ${data['editorial'] ?? 'Desconocida'}',
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.grey[600],
                                   ),
                                 ),
+                              Text(
+                                'Solicitado: ${_dateFormat.format(fechaSolicitud)}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -143,7 +190,11 @@ class _VerificacionesState extends State<Verificaciones> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+        onTap: (index) { // Ajuste en el onTap para _onItemTapped
+          if (index != _selectedIndex) { // Solo navega si el ítem es diferente
+            _onItemTapped(index);
+          }
+        },
         selectedItemColor: const Color(0xff2E4D4D),
         unselectedItemColor: Colors.grey,
         backgroundColor: Colors.white,
@@ -175,7 +226,7 @@ class _VerificacionesState extends State<Verificaciones> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
-            DrawerHeader(
+            const DrawerHeader( // Hice el DrawerHeader constante ya que no tiene variables.
               decoration: BoxDecoration(color: Color(0xff2E4D4D)),
               child: Text(
                 'Menú',
@@ -183,7 +234,7 @@ class _VerificacionesState extends State<Verificaciones> {
               ),
             ),
             ListTile(
-              title: Text('Cerrar sesión'),
+              title: const Text('Cerrar sesión'), // También hice este Text constante.
               onTap: () async {
                 await AuthService().signOut();
                 Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => SingIn()),

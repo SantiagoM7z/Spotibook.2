@@ -5,8 +5,11 @@ import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
 import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart';
-import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionAut.dart'; // Importar Configuracion si la usan los autores
-// import 'package:spotibook2/Services/Firestore_service.dart'; // Si vas a buscar en Firestore
+import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionAut.dart';
+import 'package:spotibook2/Services/Firestore_service.dart'; // Importar FirestoreService
+import 'package:firebase_auth/firebase_auth.dart'; // Necesario para obtener el usuario actual
+import 'package:spotibook2/Pages/Index/Lectores/ModuloLec.dart'; // Import para ModuloLec (si los autores también ven detalles de libros)
+
 
 class BuscarA extends StatefulWidget {
   const BuscarA({super.key});
@@ -17,83 +20,83 @@ class BuscarA extends StatefulWidget {
 
 class _BuscarAState extends State<BuscarA> {
   final TextEditingController _controller = TextEditingController();
-  // Esta lista 'libros' es solo para el ejemplo.
-  // En una aplicación real, cargarías los libros desde Firestore.
-  List<String> libros = [
-    "Cien años de soledad",
-    "El principito",
-    "Don Quijote de la Mancha",
-    "Harry Potter",
-    "Crónica de una muerte anunciada",
-    "Rayuela",
-    "La Sombra del Viento",
-    "Fahrenheit 451",
-    "1984",
-    "Orgullo y Prejuicio",
-  ];
-  List<String> resultados = [];
+  List<Map<String, dynamic>> resultados = []; // Ahora almacenará mapas de libros
+  bool _isLoading = false;
+  String? _searchError;
 
-  // El índice para "Buscar" es 1 en tu BottomNavigationBar
-  int _selectedIndex = 1;
+  int _selectedIndex = 1; // El índice para 'Buscar' en la BottomNavigationBar
+
+  bool isAuthor = false; // Se actualizará dinámicamente (copiado de Buscar.dart)
+  String? currentUserId; // Para almacenar el UID del usuario actual (copiado de Buscar.dart)
 
   @override
   void initState() {
     super.initState();
-    resultados = libros; // Inicialmente muestra todos los libros
+    _checkUserType(); // Verifica el tipo de usuario al iniciar (copiado de Buscar.dart)
   }
 
-  // TODO: En una aplicación real, esta función debería interactuar con Firestore.
-  // void _buscar(String query) async {
-  //   if (query.isEmpty) {
-  //     setState(() {
-  //       resultados = []; // O todos los libros, si prefieres
-  //     });
-  //     return;
-  //   }
-  //   // Ejemplo de cómo llamarías a un servicio de Firestore:
-  //   // List<Map<String, dynamic>> fetchedBooks = await FirestoreService().searchBooks(query);
-  //   // setState(() {
-  //   //   resultados = fetchedBooks.map((book) => book['titulo'] as String).toList();
-  //   // });
-
-  //   // Mientras tanto, para el ejemplo con lista estática:
-  //   setState(() {
-  //     resultados = libros
-  //         .where((libro) =>
-  //             libro.toLowerCase().contains(query.toLowerCase()))
-  //         .toList();
-  //   });
-  // }
-  // Para este ejemplo, mantenemos la búsqueda local.
-  void _buscar(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        resultados = libros; // Muestra todos los libros si la búsqueda está vacía
-      } else {
-        resultados = libros
-            .where((libro) =>
-                libro.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+  // Método para verificar el tipo de usuario (copiado de Buscar.dart)
+  Future<void> _checkUserType() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      currentUserId = user.uid;
+      // Asumiendo que FirestoreService.getUserType también existe para autores o que esta info no es crítica para la búsqueda.
+      // Si la búsqueda debe variar por tipo de usuario, aquí podrías añadir esa lógica.
+      final userType = await FirestoreService().getUserType(user.uid); 
+      if (mounted) {
+        setState(() {
+          isAuthor = (userType == 'Autor'); 
+        });
       }
-    });
+    }
   }
 
+  void _buscar(String query) async {
+    if (query.trim().isEmpty) {
+      setState(() {
+        resultados = [];
+        _searchError = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _searchError = null;
+    });
+
+    try {
+      // Usar el servicio de Firestore para buscar libros, como en Buscar.dart
+      final fetchedResults = await FirestoreService().searchBooks(query);
+      if (mounted) {
+        setState(() {
+          resultados = fetchedResults;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Error al buscar libros en Firestore para autor: $e");
+      if (mounted) {
+        setState(() {
+          _searchError = 'No se pudo completar la búsqueda. Intenta de nuevo.';
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   void _onItemTapped(int index) {
-    // Si el índice ya es el seleccionado, no hacemos nada
     if (_selectedIndex == index) return;
 
-    // Actualizamos el índice seleccionado
     setState(() {
       _selectedIndex = index;
     });
 
-    // Usamos Navigator.pushReplacement para una navegación limpia
     switch (index) {
       case 0: // CatálogoA
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const CatalogoA()));
         break;
-      case 1: // BuscarA (Esta es la página actual, no navegamos si ya estamos aquí)
+      case 1: // BuscarA (current page)
         break;
       case 2: // AgregarA
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AgregarA()));
@@ -115,28 +118,26 @@ class _BuscarAState extends State<BuscarA> {
           controller: _controller,
           onChanged: _buscar,
           decoration: const InputDecoration(
-            hintText: "Buscar libros...",
+            hintText: "Buscar libros, autores o editoriales...", // Mismo hint que Buscar.dart
             border: InputBorder.none,
             hintStyle: TextStyle(color: Colors.white54),
           ),
           style: const TextStyle(color: Colors.white),
-          autofocus: true, // Para que el teclado aparezca al entrar
+          autofocus: true,
         ),
         backgroundColor: const Color(0xff2E4D4D),
-        iconTheme: const IconThemeData(color: Colors.white), // Color del ícono del drawer
-      ),
-      body: ListView.builder(
-        itemCount: resultados.length,
-        itemBuilder: (context, index) {
-          // TODO: En una aplicación real, aquí mostrarías un widget de tarjeta de libro más elaborado.
-          return ListTile(
-            title: Text(resultados[index]),
-            // onTap: () {
-            //   // TODO: Navegar a la página de detalles del libro, pasando los datos del libro
-            //   // Navigator.push(context, MaterialPageRoute(builder: (_) => ModuloLec(bookData: bookDataMap)));
-            // },
-          );
-        },
+        iconTheme: const IconThemeData(color: Colors.white),
+        leading: Builder( // Añadir el ícono de menú para el Drawer como en Buscar.dart
+          builder: (BuildContext context) {
+            return IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+              tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+            );
+          },
+        ),
       ),
       // --- Inicio del Drawer (Menú lateral) ---
       drawer: Drawer(
@@ -212,14 +213,54 @@ class _BuscarAState extends State<BuscarA> {
         ),
       ),
       // --- Fin del Drawer ---
+      body: _isLoading // Lógica de visualización de resultados (copiado de Buscar.dart)
+          ? const Center(child: CircularProgressIndicator())
+          : _searchError != null
+              ? Center(
+                  child: Text(_searchError!, style: const TextStyle(color: Colors.red, fontSize: 16)),
+                )
+              : resultados.isEmpty && _controller.text.isNotEmpty
+                  ? const Center(
+                      child: Text('No se encontraron resultados.', style: TextStyle(fontSize: 16)),
+                    )
+                  : ListView.builder(
+                      itemCount: resultados.length,
+                      itemBuilder: (context, index) {
+                        final book = resultados[index];
+                        final imageUrl = book['portadaUrl'] as String?;
+
+                        return ListTile(
+                          leading: imageUrl != null && imageUrl.isNotEmpty
+                              ? Image.network(
+                                  imageUrl,
+                                  width: 50,
+                                  height: 75,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+                                )
+                              : const Icon(Icons.book, size: 50),
+                          title: Text(book['titulo'] ?? 'Título Desconocido'),
+                          subtitle: Text('${book['autor'] ?? 'Autor Desconocido'} - ${book['editorial'] ?? 'Editorial Desconocida'}'),
+                          onTap: () {
+                            // Navegar al detalle del libro (ModuloLec)
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ModuloLec(bookData: book),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
       // --- Inicio del BottomNavigationBar ---
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         backgroundColor: const Color(0xff2E4D4D),
-        selectedItemColor: Colors.white, // Resalta el ítem seleccionado en blanco
-        unselectedItemColor: Colors.grey[400], // Ítems no seleccionados en un gris más claro
-        type: BottomNavigationBarType.fixed, // Asegura que todos los ítems sean visibles
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.grey[400],
+        type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catálogo'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
