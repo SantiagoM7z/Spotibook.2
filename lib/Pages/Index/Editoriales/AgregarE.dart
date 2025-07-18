@@ -9,7 +9,7 @@ import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
 import 'package:spotibook2/Pages/Index/Editoriales/PerfilE.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
-import 'package:spotibook2/Services/firestore_service.dart';
+import 'package:spotibook2/Services/Firestore_service.dart';
 import 'package:spotibook2/Services/DropboxConfig.dart'; // Asegúrate de que esta ruta sea correcta
 import 'package:cloud_firestore/cloud_firestore.dart';
 

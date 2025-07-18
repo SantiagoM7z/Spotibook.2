@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spotibook2/Services/firestore_service.dart'; // Para interactuar con Firestore
+import 'package:spotibook2/Services/Firestore_service.dart'; // Para interactuar con Firestore
 import 'package:cloud_firestore/cloud_firestore.dart'; // Para el tipo Timestamp
 
 class Hilos extends StatefulWidget {

@@ -5,9 +5,12 @@ import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
 import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
 
 import 'package:spotibook2/Services/Auth_Service.dart';
-import 'package:spotibook2/Services/firestore_service.dart';
+import 'package:spotibook2/Services/Firestore_service.dart';
 import 'package:spotibook2/Services/email_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+// Importa la página del Centro de Ayuda
+import 'package:spotibook2/Pages/Suport/HelpCenter.dart'; // ¡Asegúrate de que esta ruta sea correcta!
 
 class SingUp extends StatefulWidget {
   final String UserType;
@@ -269,6 +272,17 @@ class _SingUpState extends State<SingUp> {
                     child: const Text("Términos y Condiciones"),
                   ),
                 ],
+              ),
+              // Aquí se agrega el nuevo TextButton "Centro de Ayuda"
+              TextButton(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=>HelpCenter()));
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xff2E4D4D),
+                  textStyle: const TextStyle(fontSize: 10),
+                ),
+                child: const Text("Centro de Ayuda"),
               ),
               const SizedBox(height: 20), 
               ElevatedButton(

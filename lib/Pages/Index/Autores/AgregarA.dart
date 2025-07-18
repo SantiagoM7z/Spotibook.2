@@ -10,8 +10,8 @@ import 'package:spotibook2/Pages/Index/Autores/PerfilA.dart';
 import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionAut.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
-import 'package:spotibook2/Services/firestore_service.dart';
-import 'package:spotibook2/Services/DropboxService.dart'; // Importar correctamente DropboxService
+import 'package:spotibook2/Services/Firestore_service.dart';
+import 'package:spotibook2/Services/DropboxService.dart';
 
 class AgregarA extends StatefulWidget {
   final Map<String, dynamic>? bookToEdit;
@@ -108,6 +108,8 @@ class _AgregarAState extends State<AgregarA> {
               (_currentCoverImageUrl != null && _currentCoverImageUrl!.isNotEmpty)) &&
           (filePath != null ||
               (_currentFileUrl != null && _currentFileUrl!.isNotEmpty));
+      
+      // Actualización de los mensajes de error visuales
       imageError = (imagePath == null &&
               (_currentCoverImageUrl == null || _currentCoverImageUrl!.isEmpty))
           ? "Debes seleccionar una portada"
@@ -126,10 +128,14 @@ class _AgregarAState extends State<AgregarA> {
       if (pickedFile != null) {
         setState(() {
           imagePath = pickedFile.path;
-          imageError = null;
-          _currentCoverImageUrl = null;
+          imageError = null; // Limpiar error al seleccionar nueva imagen
+          _currentCoverImageUrl = null; // Eliminar la URL actual si se selecciona una nueva
           _validateForm();
         });
+      } else {
+        // Si pickedFile es null (el usuario canceló), asegura que los mensajes de error actuales
+        // se actualicen en función de _currentCoverImageUrl existente si todavía es null/vacío.
+        _validateForm();
       }
     } catch (e) {
       setState(() {
@@ -157,10 +163,14 @@ class _AgregarAState extends State<AgregarA> {
 
         setState(() {
           filePath = result.files.single.path;
-          fileError = null;
-          _currentFileUrl = null;
+          fileError = null; // Limpiar error al seleccionar nuevo archivo
+          _currentFileUrl = null; // Eliminar la URL actual si se selecciona un nuevo archivo
           _validateForm();
         });
+      } else {
+        // Si result es null (el usuario canceló), asegura que los mensajes de error actuales
+        // se actualicen en función de _currentFileUrl existente si todavía es null/vacío.
+        _validateForm();
       }
     } catch (e) {
       setState(() {
@@ -171,11 +181,21 @@ class _AgregarAState extends State<AgregarA> {
   }
 
   Future<void> _submitForm() async {
+    // Revalidar el formulario justo antes de enviar para capturar cualquier cambio de último minuto
+    // y asegurar que los errores visuales se actualicen.
+    _formKey.currentState?.validate();
+    _validateForm();
+
     if (!isFormValid) {
-      _formKey.currentState?.validate();
-      _validateForm();
+      // Si el formulario no es válido después de la revalidación, salimos.
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Por favor, completa todos los campos obligatorios y selecciona la portada y el archivo.'),
+        backgroundColor: Colors.orange,
+        duration: const Duration(seconds: 4),
+      ));
       return;
     }
+
     setState(() => isUploading = true);
 
     try {
@@ -209,20 +229,38 @@ class _AgregarAState extends State<AgregarA> {
         return;
       }
 
-      String? finalImageUrl = _currentCoverImageUrl;
-      String? finalFileUrl = _currentFileUrl;
+      String? finalImageUrl = _currentCoverImageUrl; // Inicia con la URL existente
+      String? finalFileUrl = _currentFileUrl;     // Inicia con la URL existente
+
+      // Subir nueva imagen si se seleccionó una nueva
       if (imagePath != null) {
         final imageFile = File(imagePath!);
         final imageName =
             'portada_revision_${DateTime.now().millisecondsSinceEpoch}${path.extension(imagePath!)}';
+        print('Iniciando subida de imagen a Dropbox: ${imageFile.path}');
         finalImageUrl = await _dropboxService.uploadFile(imageFile, '/Revisiones/$imageName');
+        print('URL de imagen obtenida de Dropbox: $finalImageUrl');
       }
 
+      // Subir nuevo archivo si se seleccionó uno nuevo
       if (filePath != null) {
         final bookFile = File(filePath!);
         final bookName =
             'libro_revision_${DateTime.now().millisecondsSinceEpoch}${path.extension(filePath!)}';
+        print('Iniciando subida de archivo a Dropbox: ${bookFile.path}');
         finalFileUrl = await _dropboxService.uploadFile(bookFile, '/Revisiones/$bookName');
+        print('URL de archivo obtenida de Dropbox: $finalFileUrl');
+      }
+      
+      // La validación original ahora es un poco redundante si se manejó bien el isFormValid
+      // y la lógica de _currentCoverImageUrl/_currentFileUrl.
+      // Sin embargo, para seguridad, puedes mantenerla pero con un mensaje más claro
+      // o ajustarla para que solo sea un error si *ninguna* URL (nueva o existente) está presente.
+      if (finalImageUrl == null || finalImageUrl.isEmpty) { // Usamos 'finalImageUrl' que ya considera la existente
+        throw Exception("La URL de la portada es obligatoria y no se pudo obtener.");
+      }
+      if (finalFileUrl == null || finalFileUrl.isEmpty) { // Usamos 'finalFileUrl' que ya considera la existente
+        throw Exception("La URL del archivo es obligatoria y no se pudo obtener.");
       }
 
       final Map<String, dynamic> bookData = {
@@ -231,8 +269,8 @@ class _AgregarAState extends State<AgregarA> {
         'editorial': editorialController.text,
         'sinopsis': sinopsisController.text,
         'etiquetas': selectedTags,
-        'portadaUrlRevision': finalImageUrl,
-        'archivoUrlRevision': finalFileUrl,
+        'portadaUrlRevision': finalImageUrl, // Ahora `finalImageUrl` SIEMPRE debe tener un valor si todo va bien
+        'archivoUrlRevision': finalFileUrl,   // Ahora `finalFileUrl` SIEMPRE debe tener un valor si todo va bien
         'lastUpdated': DateTime.now(),
       };
 
@@ -311,7 +349,7 @@ class _AgregarAState extends State<AgregarA> {
                             title: Text(
                               tag['nombre'] != null && tag['nombre'].isNotEmpty
                                   ? tag['nombre']
-                                  : 'Nombre no disponible', // Modificado aquí
+                                  : 'Nombre no disponible',
                             ),
                             value: tempSelected.contains(tag['id']),
                             onChanged: (bool? value) {
@@ -363,11 +401,12 @@ class _AgregarAState extends State<AgregarA> {
       ),
       body: Form(
         key: _formKey,
-        onChanged: _validateForm,
+        onChanged: _validateForm, // Llama a _validateForm en cada cambio del formulario
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: ListView(
             children: <Widget>[
+              // Sección de Portada del libro
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -393,9 +432,9 @@ class _AgregarAState extends State<AgregarA> {
                             : _currentCoverImageUrl != null &&
                                     _currentCoverImageUrl!.isNotEmpty
                                 ? DecorationImage(
-                                    image: NetworkImage(_currentCoverImageUrl!),
-                                    fit: BoxFit.cover,
-                                  )
+                                      image: NetworkImage(_currentCoverImageUrl!),
+                                      fit: BoxFit.cover,
+                                    )
                                 : null,
                       ),
                       child: (imagePath == null &&
@@ -494,7 +533,7 @@ class _AgregarAState extends State<AgregarA> {
                           const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: selectedTags.isEmpty
+                          color: selectedTags.isEmpty && !isFormValid // Muestra rojo si está vacío y el formulario no es válido
                               ? Colors.red
                               : Colors.grey[300]!,
                           width: 1.0,
@@ -518,7 +557,7 @@ class _AgregarAState extends State<AgregarA> {
                       ),
                     ),
                   ),
-                  if (selectedTags.isEmpty && !isFormValid)
+                  if (selectedTags.isEmpty && !isFormValid) // Muestra mensaje de error si está vacío y no es válido
                     const Padding(
                       padding: EdgeInsets.only(top: 4.0),
                       child: Text(
@@ -542,7 +581,7 @@ class _AgregarAState extends State<AgregarA> {
                             label: Text(
                               tag['nombre'] != null && tag['nombre'].isNotEmpty
                                   ? tag['nombre']
-                                  : 'Sin Nombre', // Modificado aquí
+                                  : 'Sin Nombre',
                             ),
                             deleteIcon: const Icon(Icons.close, size: 18),
                             onDeleted: () {

@@ -5,13 +5,13 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
-import 'package:spotibook2/Services/firestore_service.dart'; // Asegúrate de tener este archivo y clase
+import 'package:spotibook2/Services/Firestore_service.dart'; // Asegúrate de tener este archivo y clase
 import 'package:spotibook2/Services/DropboxService.dart'; // Asegúrate de tener este archivo y clase
 import 'package:path_provider/path_provider.dart'; // Para obtener directorios temporales
 import 'dart:io'; // Para manejar archivos
 import 'package:http/http.dart' as http; // Para descargar archivos desde URL
 
-class AoD extends StatelessWidget {
+class AoD extends StatefulWidget {
   final String documentId; // El ID del documento en 'solicitudes_publicacion'
   final Map<String, dynamic> libro; // Los datos del libro de 'solicitudes_publicacion'
 
@@ -21,9 +21,32 @@ class AoD extends StatelessWidget {
     required this.libro,
   });
 
+  @override
+  State<AoD> createState() => _AoDState();
+}
+
+class _AoDState extends State<AoD> {
+  // 1. Estado para la selección del tipo de libro (premium/gratuito)
+  // 'null' inicialmente para indicar que no se ha seleccionado nada.
+  bool? _isPremium; 
+
+  // Función para obtener el nombre de una etiqueta dado su ID
+  Future<String> _getTagName(String tagId) async {
+    try {
+      DocumentSnapshot tagDoc = await FirebaseFirestore.instance.collection('etiquetas').doc(tagId).get();
+      if (tagDoc.exists) {
+        return tagDoc.get('nombre') ?? 'Etiqueta Desconocida';
+      }
+      return 'Etiqueta no encontrada';
+    } catch (e) {
+      debugPrint('Error al obtener nombre de etiqueta $tagId: $e');
+      return 'Error al cargar etiqueta';
+    }
+  }
+
   Future<void> _abrirArchivo(BuildContext context) async {
     try {
-      final url = libro['archivoUrlRevision'];
+      final url = widget.libro['archivoUrlRevision'];
       if (url != null && await canLaunchUrl(Uri.parse(url))) {
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       } else {
@@ -47,7 +70,7 @@ class AoD extends StatelessWidget {
 
   Future<void> _verPortada(BuildContext context) async {
     try {
-      final url = libro['portadaUrlRevision'];
+      final url = widget.libro['portadaUrlRevision'];
       if (url != null && await canLaunchUrl(Uri.parse(url))) {
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       } else {
@@ -70,17 +93,27 @@ class AoD extends StatelessWidget {
   }
 
   Future<void> _aprobarLibro(BuildContext context) async {
+    // Asegurarse de que se ha seleccionado una opción antes de proceder
+    if (_isPremium == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debes seleccionar si el libro es Premium o Gratuito.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     final FirestoreService firestoreService = FirestoreService();
     final DropboxService dropboxService = DropboxService();
 
-    // Context para el diálogo de progreso
-    BuildContext? progressDialogContext; 
+    BuildContext? progressDialogContext;
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) { // Cambiado a ctx para evitar colisión con 'context' de AoD
-        progressDialogContext = ctx; // Captura el contexto del diálogo de progreso
+      builder: (ctx) {
+        progressDialogContext = ctx;
         return const AlertDialog(
           title: Text('Aprobando libro...'),
           content: Column(
@@ -99,9 +132,9 @@ class AoD extends StatelessWidget {
       String? portadaUrlPublicado;
       String? archivoUrlPublicado;
 
-      final String? portadaUrlRevision = libro['portadaUrlRevision'];
+      final String? portadaUrlRevision = widget.libro['portadaUrlRevision'];
       if (portadaUrlRevision != null && portadaUrlRevision.isNotEmpty) {
-        final String fileName = 'portada_${documentId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final String fileName = 'portada_${widget.documentId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final String dropboxPath = '/Publicaciones/Portadas/${fileName}';
 
         try {
@@ -122,13 +155,13 @@ class AoD extends StatelessWidget {
         }
       }
 
-      final String? archivoUrlRevision = libro['archivoUrlRevision'];
+      final String? archivoUrlRevision = widget.libro['archivoUrlRevision'];
       if (archivoUrlRevision != null && archivoUrlRevision.isNotEmpty) {
         String fileExtension = '.pdf';
         if (archivoUrlRevision.contains('.')) {
           fileExtension = '.' + archivoUrlRevision.split('.').last;
         }
-        final String fileName = 'libro_${documentId}_${DateTime.now().millisecondsSinceEpoch}${fileExtension}';
+        final String fileName = 'libro_${widget.documentId}_${DateTime.now().millisecondsSinceEpoch}${fileExtension}';
         final String dropboxPath = '/Publicaciones/Libros/${fileName}';
 
         try {
@@ -149,11 +182,23 @@ class AoD extends StatelessWidget {
         }
       }
 
-      Map<String, dynamic> libroPublicadoData = Map.from(libro);
+      Map<String, dynamic> libroPublicadoData = Map.from(widget.libro);
       libroPublicadoData['portadaUrl'] = portadaUrlPublicado;
       libroPublicadoData['archivoUrl'] = archivoUrlPublicado;
       libroPublicadoData['estado'] = 'publicado';
       libroPublicadoData['fechaPublicacion'] = Timestamp.now();
+      libroPublicadoData['isPremium'] = _isPremium; // 2. Agregar el campo isPremium
+
+      // Manejo de Etiquetas: Convertir IDs a Nombres antes de publicar
+      if (libroPublicadoData.containsKey('etiquetas') && libroPublicadoData['etiquetas'] is List) {
+        List<String> tagIds = List<String>.from(libroPublicadoData['etiquetas']);
+        List<String> tagNames = [];
+        for (String id in tagIds) {
+          String name = await _getTagName(id);
+          tagNames.add(name);
+        }
+        libroPublicadoData['etiquetas'] = tagNames;
+      }
 
       libroPublicadoData.remove('portadaUrlRevision');
       libroPublicadoData.remove('archivoUrlRevision');
@@ -163,31 +208,28 @@ class AoD extends StatelessWidget {
       }
 
       await firestoreService.publishBook(libroPublicadoData);
-      await firestoreService.updateBookRequestStatus(documentId, 'aprobado');
+      await firestoreService.updateBookRequestStatus(widget.documentId, 'aprobado');
 
-      // Usar el contexto capturado para cerrar el diálogo de progreso
       if (progressDialogContext != null && Navigator.of(progressDialogContext!).canPop()) {
         Navigator.pop(progressDialogContext!);
       }
-      
-      // Volver a la pantalla de Verificaciones (usa el context original de AoD)
-      Navigator.pop(context); 
+
+      Navigator.pop(context);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('"${libro['titulo'] ?? 'El libro'}" ha sido aprobado y publicado.'),
+          content: Text('"${widget.libro['titulo'] ?? 'El libro'}" ha sido aprobado y publicado.'),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
       debugPrint('Error general al aprobar libro: $e');
-      // Asegurarse de cerrar el diálogo de progreso incluso en caso de error
       if (progressDialogContext != null && Navigator.of(progressDialogContext!).canPop()) {
         Navigator.pop(progressDialogContext!);
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al aprobar "${libro['titulo'] ?? 'el libro'}". Intenta de nuevo. Detalles: ${e.toString()}'),
+          content: Text('Error al aprobar "${widget.libro['titulo'] ?? 'el libro'}". Intenta de nuevo. Detalles: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -198,17 +240,16 @@ class AoD extends StatelessWidget {
     final FirestoreService firestoreService = FirestoreService();
     final TextEditingController motivoController = TextEditingController();
 
-    // Context para el diálogo de progreso
-    BuildContext? progressDialogContext; // <-- Variable para guardar el contexto del diálogo de progreso
+    BuildContext? progressDialogContext;
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog( // Renombrado para claridad
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Rechazar libro'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('¿Estás seguro de rechazar "${libro['titulo'] ?? 'el libro'}"?'),
+            Text('¿Estás seguro de rechazar "${widget.libro['titulo'] ?? 'el libro'}"?'),
             const SizedBox(height: 16),
             TextField(
               controller: motivoController,
@@ -222,7 +263,7 @@ class AoD extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext), // Usa dialogContext para cerrar este diálogo
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancelar'),
           ),
           TextButton(
@@ -237,12 +278,12 @@ class AoD extends StatelessWidget {
                 return;
               }
 
-              Navigator.pop(dialogContext); // Cierra el diálogo de confirmación de "Rechazar libro"
+              Navigator.pop(dialogContext);
 
-              showDialog( // Mostrar diálogo de progreso
-                context: context, // Usamos el context del widget principal para mostrarlo
+              showDialog(
+                context: context,
                 barrierDismissible: false,
-                builder: (ctx) { // Captura el contexto de este nuevo diálogo de progreso
+                builder: (ctx) {
                   progressDialogContext = ctx;
                   return const AlertDialog(
                     title: Text('Rechazando libro...'),
@@ -259,37 +300,32 @@ class AoD extends StatelessWidget {
               );
 
               try {
-                // Actualizar el estado del documento original en 'solicitudes_publicacion' a 'rechazado'
                 await firestoreService.updateBookRequestStatus(
-                  documentId,
+                  widget.documentId,
                   'rechazado',
                   motivoRechazo: motivoController.text.trim(),
                 );
 
-                // --- Líneas corregidas ---
-                // Cerrar el diálogo de progreso usando su propio contexto capturado
                 if (progressDialogContext != null && Navigator.of(progressDialogContext!).canPop()) {
                   Navigator.pop(progressDialogContext!);
                 }
-                
-                // Volver a la pantalla de Verificaciones usando el contexto original del AoD widget
-                Navigator.pop(context); 
+
+                Navigator.pop(context);
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('"${libro['titulo'] ?? 'El libro'}" ha sido rechazado.'),
+                    content: Text('"${widget.libro['titulo'] ?? 'El libro'}" ha sido rechazado.'),
                     backgroundColor: Colors.red,
                   ),
                 );
               } catch (e) {
                 debugPrint('Error al rechazar libro: $e');
-                // Asegurarse de cerrar el diálogo de progreso incluso en caso de error
                 if (progressDialogContext != null && Navigator.of(progressDialogContext!).canPop()) {
                   Navigator.pop(progressDialogContext!);
                 }
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Error al rechazar "${libro['titulo'] ?? 'el libro'}". Intenta de nuevo. Detalles: ${e.toString()}'),
+                    content: Text('Error al rechazar "${widget.libro['titulo'] ?? 'el libro'}". Intenta de nuevo. Detalles: ${e.toString()}'),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -309,7 +345,7 @@ class AoD extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          libro['titulo'] ?? 'Detalles del Libro',
+          widget.libro['titulo'] ?? 'Detalles del Libro',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: colorPrincipal,
@@ -333,9 +369,9 @@ class AoD extends StatelessWidget {
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: libro['portadaUrlRevision'] != null && (libro['portadaUrlRevision'] as String).isNotEmpty
+                child: widget.libro['portadaUrlRevision'] != null && (widget.libro['portadaUrlRevision'] as String).isNotEmpty
                     ? CachedNetworkImage(
-                        imageUrl: libro['portadaUrlRevision'],
+                        imageUrl: widget.libro['portadaUrlRevision'],
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Center(
                           child: CircularProgressIndicator(
@@ -372,46 +408,72 @@ class AoD extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              libro['titulo'] ?? 'Título Desconocido',
+              widget.libro['titulo'] ?? 'Título Desconocido',
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            if (libro['autor'] != null && (libro['autor'] as String).isNotEmpty)
+            if (widget.libro['autor'] != null && (widget.libro['autor'] as String).isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                  'Autor: ${libro['autor']}',
+                  'Autor: ${widget.libro['autor']}',
                   style: const TextStyle(fontSize: 18, color: Colors.grey),
                 ),
               ),
-            if (libro['editorial'] != null && (libro['editorial'] as String).isNotEmpty)
+            if (widget.libro['editorial'] != null && (widget.libro['editorial'] as String).isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                  'Editorial: ${libro['editorial']}',
+                  'Editorial: ${widget.libro['editorial']}',
                   style: const TextStyle(fontSize: 18, color: Colors.grey),
                 ),
               ),
-            if (libro['fechaSolicitud'] != null)
+            if (widget.libro['fechaSolicitud'] != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                  'Fecha de solicitud: ${DateFormat('dd/MM/yyyy HH:mm').format((libro['fechaSolicitud'] as Timestamp).toDate())}',
+                  'Fecha de solicitud: ${DateFormat('dd/MM/yyyy HH:mm').format((widget.libro['fechaSolicitud'] as Timestamp).toDate())}',
                   style: const TextStyle(fontSize: 16, color: Colors.grey),
                 ),
               ),
             const SizedBox(height: 16),
-            if (libro['etiquetas'] != null && (libro['etiquetas'] is List) && (libro['etiquetas'] as List).isNotEmpty)
+            // Modificación aquí para mostrar nombres de etiquetas
+            if (widget.libro['etiquetas'] != null && (widget.libro['etiquetas'] is List) && (widget.libro['etiquetas'] as List).isNotEmpty)
               Wrap(
                 spacing: 8,
                 runSpacing: 4,
-                children: (libro['etiquetas'] as List<dynamic>).map((etiqueta) {
-                  return Chip(
-                    label: Text(etiqueta.toString()),
-                    backgroundColor: colorPrincipal.withOpacity(0.1),
+                children: (widget.libro['etiquetas'] as List<dynamic>).map((tagId) {
+                  return FutureBuilder<String>(
+                    future: _getTagName(tagId.toString()),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Chip(
+                          label: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                          ),
+                          backgroundColor: colorPrincipal.withOpacity(0.1),
+                        );
+                      } else if (snapshot.hasError) {
+                        debugPrint('Error al cargar nombre de etiqueta: ${snapshot.error}');
+                        return Chip(
+                          label: const Text('Error', style: TextStyle(color: Colors.red)),
+                          backgroundColor: Colors.red.withOpacity(0.1),
+                        );
+                      } else if (snapshot.hasData) {
+                        return Chip(
+                          label: Text(snapshot.data!),
+                          backgroundColor: colorPrincipal.withOpacity(0.1),
+                        );
+                      }
+                      return Chip(
+                        label: const Text('Cargando...'),
+                        backgroundColor: colorPrincipal.withOpacity(0.1),
+                      );
+                    },
                   );
                 }).toList(),
               ),
@@ -425,18 +487,52 @@ class AoD extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              libro['sinopsis'] ?? 'No hay sinopsis disponible',
+              widget.libro['sinopsis'] ?? 'No hay sinopsis disponible',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 30),
+            // --- Nueva sección para el tipo de libro (Premium/Gratuito) ---
+            const Text('Tipo de Libro:',style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+            Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: const Text('Premium💎',style: TextStyle(fontSize: 15)),
+                    value: true,
+                    groupValue: _isPremium,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _isPremium = value;
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: const Text('Gratuito📚',style: TextStyle(fontSize: 15)),
+                    value: false,
+                    groupValue: _isPremium,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _isPremium = value;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
+            // 3. Botones de acción, con el botón "Aprobar" deshabilitado si no hay selección
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: () => _aprobarLibro(context),
+                  onPressed: _isPremium == null ? null : () => _aprobarLibro(context), // Deshabilitado si _isPremium es null
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorPrincipal,
                     minimumSize: const Size(120, 50),
+                    // Si el botón está deshabilitado, el color del texto también debe adaptarse
+                    foregroundColor: _isPremium == null ? Colors.grey : Colors.white,
                   ),
                   child: const Text('Aprobar', style: TextStyle(color: Colors.white)),
                 ),

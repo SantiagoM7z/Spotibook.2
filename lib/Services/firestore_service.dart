@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // * Guardar los datos base de CUALQUIER usuario en la colección 'users'
   Future<void> saveUser(
     User user,
     String username,
@@ -21,7 +20,6 @@ class FirestoreService {
         'verificado': false,
         'creadoEn': FieldValue.serverTimestamp(),
       };
-
       await _db.collection('users').doc(user.uid).set(userModel);
       print("Usuario base ${user.uid} (${userType}) guardado con éxito en Firestore.");
     } catch (e) {
@@ -30,7 +28,6 @@ class FirestoreService {
     }
   }
 
-  // * Guardar la información extendida de la editorial en la colección 'editoriales'
   Future<void> saveEditorialExtended(
     User user,
     String nombreLegal,
@@ -41,8 +38,9 @@ class FirestoreService {
     String? profilePictureUrl,
   ) async {
     try {
+      // Se guarda la información base del usuario primero
       await saveUser(user, username, 'Editorial', profilePictureUrl);
-
+      
       Map<String, dynamic> editorialExtendedModel = {
         'uid': user.uid,
         'email': user.email,
@@ -51,7 +49,6 @@ class FirestoreService {
         'direccion': direccion,
         'telefono': telefono,
       };
-
       await _db.collection('editoriales').doc(user.uid).set(editorialExtendedModel);
       print("Información extendida de editorial ${user.uid} guardada con éxito en Firestore.");
     } catch (e) {
@@ -60,13 +57,12 @@ class FirestoreService {
     }
   }
 
-  // * Obtener el tipo de usuario
   Future<String?> getUserType(String uid) async {
     try {
       DocumentSnapshot userDoc = await _db.collection('users').doc(uid).get();
-      final userData = userDoc.data() as Map<String, dynamic>?;
-
-      if (userDoc.exists && userData != null && userData.containsKey('userType')) {
+      // Usar '?? {}' para asegurar que 'userData' no sea nulo antes de acceder a 'userType'
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      if (userDoc.exists && userData.containsKey('userType')) {
         return userData['userType'];
       }
       return null;
@@ -76,13 +72,12 @@ class FirestoreService {
     }
   }
 
-  // * Método para obtener datos del usuario por UID
   Future<Map<String, dynamic>?> getUserData(String uid) async {
     try {
       DocumentSnapshot userDoc = await _db.collection('users').doc(uid).get();
-      final userData = userDoc.data() as Map<String, dynamic>?;
-
-      if (userDoc.exists && userData != null) {
+      // Usar '?? {}' para asegurar que 'userData' no sea nulo
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      if (userDoc.exists) { // userData ya no puede ser null aquí
         return userData;
       }
       return null;
@@ -92,13 +87,12 @@ class FirestoreService {
     }
   }
 
-  // * Método para obtener datos EXTENDIDOS de la editorial
   Future<Map<String, dynamic>?> getEditorialExtendedData(String uid) async {
     try {
       DocumentSnapshot editorialDoc = await _db.collection('editoriales').doc(uid).get();
-      final editorialData = editorialDoc.data() as Map<String, dynamic>?;
-
-      if (editorialDoc.exists && editorialData != null) {
+      // Usar '?? {}' para asegurar que 'editorialData' no sea nulo
+      final editorialData = editorialDoc.data() as Map<String, dynamic>? ?? {};
+      if (editorialDoc.exists) { // editorialData ya no puede ser null aquí
         return editorialData;
       }
       return null;
@@ -108,16 +102,13 @@ class FirestoreService {
     }
   }
 
-  // * Lógica para obtener todas las etiquetas
   Future<List<Map<String, dynamic>>> loadTags() async {
     try {
       QuerySnapshot querySnapshot = await _db.collection('etiquetas').get();
       print("Etiquetas obtenidas correctamente. Cantidad: ${querySnapshot.docs.length}");
-
       return querySnapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>?;
-        final String nombre = data?['nombre'] as String? ?? 'Nombre no especificado';
-
+        final data = doc.data() as Map<String, dynamic>? ?? {}; // Asegurar que data no es null
+        final String nombre = data['nombre'] as String? ?? 'Nombre no especificado';
         final Map<String, dynamic> tagData = {
           'id': doc.id,
           'nombre': nombre,
@@ -131,7 +122,35 @@ class FirestoreService {
     }
   }
 
-  // * Nuevo método para guardar solicitudes de publicación de libros
+  // Función privada para manejar la lógica común de guardar solicitudes de libro
+  Future<void> _saveBookSubmission({
+    required String uidField, // 'uidAutor' o 'uidEditorial'
+    required String titulo,
+    required String autor,
+    required String editorial,
+    required String sinopsis,
+    required List<String> etiquetas,
+    String? portadaUrlRevision,
+    String? archivoUrlRevision,
+  }) async {
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      throw Exception("Usuario no autenticado. No se puede guardar la solicitud de libro.");
+    }
+    await _db.collection('solicitudes_publicacion').add({
+      uidField: currentUser.uid,
+      'titulo': titulo,
+      'autor': autor,
+      'editorial': editorial,
+      'sinopsis': sinopsis,
+      'etiquetas': etiquetas,
+      'portadaUrlRevision': portadaUrlRevision,
+      'archivoUrlRevision': archivoUrlRevision,
+      'estado': 'pendiente',
+      'fechaSolicitud': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> saveBookRequest({
     required String titulo,
     required String autor,
@@ -142,31 +161,23 @@ class FirestoreService {
     String? archivoUrlRevision,
   }) async {
     try {
-      final User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        throw Exception("Usuario no autenticado. No se puede guardar la solicitud de libro.");
-      }
-
-      await _db.collection('solicitudes_publicacion').add({
-        'uidAutor': currentUser.uid,
-        'titulo': titulo,
-        'autor': autor,
-        'editorial': editorial,
-        'sinopsis': sinopsis,
-        'etiquetas': etiquetas,
-        'portadaUrlRevision': portadaUrlRevision,
-        'archivoUrlRevision': archivoUrlRevision,
-        'estado': 'pendiente',
-        'fechaSolicitud': FieldValue.serverTimestamp(), // *** CAMBIO: Asegurado que se use fechaSolicitud ***
-      });
-      print("Solicitud de publicación de libro guardada con éxito en Firestore (para revisión).");
+      await _saveBookSubmission(
+        uidField: 'uidAutor',
+        titulo: titulo,
+        autor: autor,
+        editorial: editorial,
+        sinopsis: sinopsis,
+        etiquetas: etiquetas,
+        portadaUrlRevision: portadaUrlRevision,
+        archivoUrlRevision: archivoUrlRevision,
+      );
+      print("Solicitud de publicación de libro (Autor) guardada con éxito en Firestore para revisión.");
     } catch (e) {
-      print("Error al guardar la solicitud de publicación del libro en Firestore: $e");
+      print("Error al guardar la solicitud de publicación del libro (Autor) en Firestore: $e");
       rethrow;
     }
   }
 
-  // * Método para actualizar solicitudes de publicación de libros existentes
   Future<void> updateBookRequest(String docId, Map<String, dynamic> data) async {
     try {
       await _db.collection('solicitudes_publicacion').doc(docId).update(data);
@@ -177,9 +188,6 @@ class FirestoreService {
     }
   }
 
-  // * Metodos especificos para AgregarE (Editoriales - se asume que también usan 'solicitudes_publicacion')
-  // Decidí unificar 'libros_en_revision' con 'solicitudes_publicacion' para simplificar el flujo
-  // Si tienes una razón específica para mantener 'libros_en_revision' separado, házmelo saber.
   Future<void> saveBookForReview({
     required String titulo,
     required String autor,
@@ -190,34 +198,26 @@ class FirestoreService {
     String? archivoUrlRevision,
   }) async {
     try {
-      final User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        throw Exception("Usuario no autenticado. No se puede guardar el libro para revisión.");
-      }
-
-      await _db.collection('solicitudes_publicacion').add({ // *** CAMBIO: Usando solicitudes_publicacion ***
-        'uidEditorial': currentUser.uid, // Campo para identificar al que lo sube (editorial)
-        'titulo': titulo,
-        'autor': autor,
-        'editorial': editorial,
-        'sinopsis': sinopsis,
-        'etiquetas': etiquetas,
-        'portadaUrlRevision': portadaUrlRevision,
-        'archivoUrlRevision': archivoUrlRevision,
-        'estado': 'pendiente',
-        'fechaSolicitud': FieldValue.serverTimestamp(), // *** CAMBIO: Usando fechaSolicitud ***
-      });
+      await _saveBookSubmission(
+        uidField: 'uidEditorial',
+        titulo: titulo,
+        autor: autor,
+        editorial: editorial,
+        sinopsis: sinopsis,
+        etiquetas: etiquetas,
+        portadaUrlRevision: portadaUrlRevision,
+        archivoUrlRevision: archivoUrlRevision,
+      );
       print('Libro guardado en Firestore para revisión (Editoriales).');
     } catch (e) {
       print('Error al guardar libro en Firestore para revisión (Editoriales): $e');
-      throw Exception('Error al guardar libro en Firestore para revisión (Editoriales): $e');
+      rethrow; // Consistencia: rethrow también aquí
     }
   }
 
-  // * Método para actualizar libros existentes en 'solicitudes_publicacion' (unificado)
   Future<void> updateBookForReview(String docId, Map<String, dynamic> data) async {
     try {
-      await _db.collection('solicitudes_publicacion').doc(docId).update(data); // *** CAMBIO: Unificado a solicitudes_publicacion ***
+      await _db.collection('solicitudes_publicacion').doc(docId).update(data);
       print("Libro en revisión $docId actualizado con éxito en Firestore (Editoriales).");
     } catch (e) {
       print("Error al actualizar libro en revisión $docId en Firestore: $e");
@@ -225,40 +225,42 @@ class FirestoreService {
     }
   }
 
-  // --- Métodos para la nueva colección 'libros' (libros publicados/aprobados) ---
-  // *** NUEVO MÉTODO PARA PUBLICAR LIBRO ***
   Future<void> publishBook(Map<String, dynamic> bookData) async {
     try {
-      // Eliminar campos que solo son para revisión si están presentes y no deben ir a 'libros'
+      // *** INICIO DE LA SECCIÓN CRÍTICA DE URLs CORREGIDA ***
+
+      // 1. Manejar la fecha de publicación
+      // Si la solicitud ya tiene una fecha, úsala como fecha de publicación.
+      // De lo contrario, usa la marca de tiempo del servidor.
+      if (bookData.containsKey('fechaSolicitud')) {
+        bookData['fechaPublicacion'] = bookData['fechaSolicitud'];
+        bookData.remove('fechaSolicitud');
+      } else {
+        bookData['fechaPublicacion'] = FieldValue.serverTimestamp();
+      }
+
+      // 2. Copiar URLs de revisión a URLs finales antes de eliminarlas.
+      // Esto asegura que las URLs pasen a los campos correctos en 'libros'.
+      if (bookData.containsKey('portadaUrlRevision')) {
+        bookData['portadaUrl'] = bookData['portadaUrlRevision'];
+      }
+      if (bookData.containsKey('archivoUrlRevision')) {
+        bookData['archivoUrl'] = bookData['archivoUrlRevision'];
+      }
+
+      // 3. Eliminar campos temporales o de revisión que no deben ir en la colección 'libros'
       bookData.remove('portadaUrlRevision');
       bookData.remove('archivoUrlRevision');
-      bookData.remove('fechaEnvio'); // Si se usaba en solicitudes_publicacion para editoriales
-      bookData.remove('uidAutor'); // Si se usaba para autores en solicitudes_publicacion
-      bookData.remove('uidEditorial'); // Si se usaba para editoriales en solicitudes_publicacion
+      bookData.remove('fechaEnvio'); // Revisa si este campo es realmente necesario
+      bookData.remove('uidAutor');
+      bookData.remove('uidEditorial');
+      bookData.remove('estado'); // El estado 'publicado' no es necesario aquí
 
-      // Renombrar 'fechaSolicitud' a 'fechaPublicacion' y quitar 'estado' de la colección 'libros'
-      // Ya que en 'libros' todos están publicados.
-      bookData['fechaPublicacion'] = FieldValue.serverTimestamp();
-      bookData['visualizaciones'] = 0; // Inicializar visualizaciones
-      bookData['calificacionPromedio'] = 0.0; // Inicializar calificación
+      // *** FIN DE LA SECCIÓN CRÍTICA DE URLs CORREGIDA ***
 
-      // Asegurarse de que los campos de URL finales sean correctos
-      // Estos ya deberían venir pre-procesados en bookData desde AoD.dart
-      // (ej. 'portadaUrl' y 'archivoUrl')
-      // Si aún vienen como 'portadaUrlRevision' y 'archivoUrlRevision', renombrarlos aquí
-      if (bookData.containsKey('portadaUrlRevision') && !bookData.containsKey('portadaUrl')) {
-        bookData['portadaUrl'] = bookData['portadaUrlRevision'];
-        bookData.remove('portadaUrlRevision');
-      }
-      if (bookData.containsKey('archivoUrlRevision') && !bookData.containsKey('archivoUrl')) {
-        bookData['archivoUrl'] = bookData['archivoUrlRevision'];
-        bookData.remove('archivoUrlRevision');
-      }
-
-
-      // Eliminar el campo 'estado' ya que en la colección 'libros' todos están publicados
-      bookData.remove('estado');
-
+      // Inicializar campos predeterminados para el libro publicado
+      bookData['visualizaciones'] = 0;
+      bookData['calificacionPromedio'] = 0.0;
 
       await _db.collection('libros').add(bookData);
       print("Libro '${bookData['titulo'] ?? 'Desconocido'}' publicado con éxito en la colección 'libros'.");
@@ -268,7 +270,6 @@ class FirestoreService {
     }
   }
 
-  // *** NUEVO MÉTODO PARA ACTUALIZAR EL ESTADO DE LA SOLICITUD DE PUBLICACIÓN ***
   Future<void> updateBookRequestStatus(String documentId, String newStatus, {String? motivoRechazo}) async {
     try {
       Map<String, dynamic> updateData = {
@@ -278,7 +279,6 @@ class FirestoreService {
       if (motivoRechazo != null && motivoRechazo.isNotEmpty) {
         updateData['motivoRechazo'] = motivoRechazo;
       }
-
       await _db.collection('solicitudes_publicacion').doc(documentId).update(updateData);
       print("Estado de la solicitud $documentId actualizado a '$newStatus'.");
     } catch (e) {
@@ -287,16 +287,14 @@ class FirestoreService {
     }
   }
 
-  /// Obtiene todos los libros publicados en el catálogo (colección 'libros').
   Future<List<Map<String, dynamic>>> getAllBooks() async {
     try {
       QuerySnapshot querySnapshot = await _db.collection('libros').orderBy('fechaPublicacion', descending: true).get();
       return querySnapshot.docs.map((doc) {
-        // Garantizar que data es un Map<String, dynamic>
-        final data = doc.data() as Map<String, dynamic>?;
+        final data = doc.data() as Map<String, dynamic>? ?? {}; // Asegurar que data no es null
         return {
           'id': doc.id,
-          ...(data ?? {}),
+          ...data, // Usar '...' para esparcir el mapa, si 'data' es vacío no añade nada
         };
       }).toList();
     } catch (e) {
@@ -305,13 +303,34 @@ class FirestoreService {
     }
   }
 
-  /// Busca libros publicados por título, autor o editorial.
+  Future<List<Map<String, dynamic>>> getBooksByTag(String tag) async {
+    try {
+      QuerySnapshot querySnapshot = await _db
+          .collection('libros')
+          .where('etiquetas', arrayContains: tag)
+          .orderBy('fechaPublicacion', descending: true)
+          .get();
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>? ?? {};
+        return {
+          'id': doc.id,
+          ...data,
+        };
+      }).toList();
+    } catch (e) {
+      print("Error al obtener libros por etiqueta '$tag': $e");
+      return [];
+    }
+  }
+
   Future<List<Map<String, dynamic>>> searchBooks(String query) async {
     if (query.isEmpty) {
       return [];
     }
     String queryLower = query.toLowerCase();
     try {
+      // Ojo: Esta implementación descarga todos los libros y filtra en memoria.
+      // Para grandes volúmenes de datos, considera soluciones de búsqueda como Algolia.
       List<Map<String, dynamic>> allBooks = await getAllBooks();
       return allBooks.where((book) {
         final title = (book['titulo'] as String? ?? '').toLowerCase();
@@ -327,9 +346,6 @@ class FirestoreService {
     }
   }
 
-  // * Obtiene los libros que un AUTOR/EDITORIAL ha enviado para revisión.
-  // Se asume que todas las solicitudes (sean de Autor o Editorial) van a 'solicitudes_publicacion'
-  // y se diferencian por el campo 'uidAutor' o 'uidEditorial'.
   Future<List<Map<String, dynamic>>> getMySubmittedBooks(String uid, String userType) async {
     try {
       QuerySnapshot querySnapshot;
@@ -339,20 +355,18 @@ class FirestoreService {
             .orderBy('fechaSolicitud', descending: true)
             .get();
       } else if (userType == 'Editorial') {
-        querySnapshot = await _db.collection('solicitudes_publicacion') // *** CAMBIO: Usando solicitudes_publicacion ***
+        querySnapshot = await _db.collection('solicitudes_publicacion')
             .where('uidEditorial', isEqualTo: uid)
-            .orderBy('fechaSolicitud', descending: true) // *** CAMBIO: Usando fechaSolicitud ***
+            .orderBy('fechaSolicitud', descending: true)
             .get();
       } else {
         return [];
       }
-
       return querySnapshot.docs.map((doc) {
-        // Garantizar que data es un Map<String, dynamic>
-        final data = doc.data() as Map<String, dynamic>?;
+        final data = doc.data() as Map<String, dynamic>? ?? {};
         return {
           'id': doc.id,
-          ...(data ?? {}),
+          ...data,
         };
       }).toList();
     } catch (e) {
@@ -361,8 +375,6 @@ class FirestoreService {
     }
   }
 
-  // --- Métodos para interacciones del usuario con libros (añadir a biblioteca, etc.) ---
-  /// Añade un libro a una categoría específica de la biblioteca de un usuario.
   Future<void> addBookToUserLibrary(String uid, String bookId, String category) async {
     try {
       await _db.collection('users').doc(uid).update({
@@ -375,7 +387,6 @@ class FirestoreService {
     }
   }
 
-  /// Elimina un libro de una categoría específica de la biblioteca de un usuario.
   Future<void> removeBookFromUserLibrary(String uid, String bookId, String category) async {
     try {
       await _db.collection('users').doc(uid).update({
@@ -388,35 +399,30 @@ class FirestoreService {
     }
   }
 
-  /// Obtiene los detalles completos de los libros de la biblioteca de un usuario para una categoría específica.
   Future<List<Map<String, dynamic>>> getUserLibraryBooks(String uid, String category) async {
     try {
       DocumentSnapshot userDoc = await _db.collection('users').doc(uid).get();
       if (!userDoc.exists) {
         return [];
       }
-
-      final userData = userDoc.data() as Map<String, dynamic>?;
-      if (userData == null || !userData.containsKey(category)) {
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      if (!userData.containsKey(category)) { // userData ya no puede ser null aquí
         return [];
       }
-
       List<String> bookIds = List<String>.from(userData[category] ?? []);
-
       if (bookIds.isEmpty) {
         return [];
       }
-
+      // Firestore soporta hasta 10 cláusulas 'whereIn'.
+      // Si bookIds puede ser muy grande, esto necesitaría paginación o un enfoque diferente.
       QuerySnapshot booksSnapshot = await _db.collection('libros')
           .where(FieldPath.documentId, whereIn: bookIds)
           .get();
-
       return booksSnapshot.docs.map((doc) {
-        // Garantizar que data es un Map<String, dynamic>
-        final data = doc.data() as Map<String, dynamic>?;
+        final data = doc.data() as Map<String, dynamic>? ?? {};
         return {
           'id': doc.id,
-          ...(data ?? {}),
+          ...data,
         };
       }).toList();
     } catch (e) {
@@ -425,52 +431,39 @@ class FirestoreService {
     }
   }
 
-  // ╔══════════════════════════════════════════════════════════════════════════════╗
-  // ║                            MÉTODOS PARA FOROS (HILOS/POSTS)                    ║
-  // ╚══════════════════════════════════════════════════════════════════════════════╝
-
-  /// Obtiene todos los FOROS principales de la colección 'foros_de_la_comunidad'.
   Stream<List<Map<String, dynamic>>> getAllForums() {
     return _db.collection('foros_de_la_comunidad')
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {
-        // Obtener los datos como Map<String, dynamic> directamente.
-        // Si doc.data() es null, se usará un mapa vacío.
-        final data = doc.data() as Map<String, dynamic>?;
+        final data = doc.data() as Map<String, dynamic>? ?? {};
         return {
           'id': doc.id,
-          ...(data ?? {}), // Usar el operador de propagación nulo-consciente
+          ...data,
         };
       }).toList();
     });
   }
 
-  /// Obtiene todos los HILOS/POSTS de la subcolección 'hilos' de CUALQUIER foro.
-  /// Requiere un índice de grupo de colecciones para 'hilos' en Firestore.
   Stream<List<Map<String, dynamic>>> getThreadsCollectionGroup() {
     return _db.collectionGroup('hilos')
         .orderBy('fechacreacion', descending: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {
-        // Obtener los datos como Map<String, dynamic> directamente.
-        // Si doc.data() es null, se usará un mapa vacío.
-        final data = doc.data() as Map<String, dynamic>?;
-        // Parsear la ruta para obtener el forumId de forma explícita
+        final data = doc.data() as Map<String, dynamic>? ?? {};
         final pathSegments = doc.reference.path.split('/');
-        final forumId = pathSegments.length >= 2 ? pathSegments[1] : null; // Asumiendo estructura "coleccion/documento/subcoleccion/documento"
-
+        // Asegurarse de que el path sea lo suficientemente largo para obtener el forumId
+        final forumId = pathSegments.length >= 2 ? pathSegments[1] : null;
         return {
-          'id': doc.id, // ID del hilo
-          'forumId': forumId, // Usar el forumId extraído
-          ...(data ?? {}), // Usar el operador de propagación nulo-consciente
+          'id': doc.id,
+          'forumId': forumId,
+          ...data,
         };
       }).toList();
     });
   }
 
-  /// Obtiene los detalles de un hilo/post específico dentro de un foro específico.
   Future<Map<String, dynamic>?> getThreadDetails(String forumId, String threadId) async {
     try {
       DocumentSnapshot doc = await _db.collection('foros_de_la_comunidad')
@@ -478,10 +471,8 @@ class FirestoreService {
           .collection('hilos')
           .doc(threadId)
           .get();
-
       if (doc.exists) {
-        // Si doc.exists es true, doc.data() no será null y será de tipo Map<String, dynamic>.
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data() as Map<String, dynamic>? ?? {}; // Asegurar que data no es null
         return {
           'id': doc.id,
           'forumId': forumId,
@@ -495,7 +486,6 @@ class FirestoreService {
     }
   }
 
-  /// Crea un nuevo foro principal en la colección 'foros_de_la_comunidad'.
   Future<String?> createForum({
     required String nombreForo,
     required String creadorForoName,
@@ -513,11 +503,10 @@ class FirestoreService {
       return docRef.id;
     } catch (e) {
       print("Error al crear foro principal: $e");
-      return null;
+      rethrow; // Consistencia: rethrow aquí
     }
   }
 
-  /// Crea un nuevo hilo/post dentro de la subcolección 'hilos' de un foro específico.
   Future<String?> createThread({
     required String forumId,
     required String titulo,
@@ -541,11 +530,10 @@ class FirestoreService {
       return docRef.id;
     } catch (e) {
       print("Error al crear hilo/post en foro $forumId: $e");
-      return null;
+      rethrow; // Consistencia: rethrow aquí
     }
   }
 
-  /// Añade un comentario a la subcolección 'comentarios' de un hilo/post específico dentro de un foro.
   Future<void> addCommentToThread({
     required String forumId,
     required String threadId,
@@ -566,12 +554,13 @@ class FirestoreService {
         'uidcomentario': uidcomentario,
         'publicacion': FieldValue.serverTimestamp(),
       });
+      print("Comentario añadido al hilo $threadId en foro $forumId.");
     } catch (e) {
       print("Error al enviar comentario al hilo $threadId en foro $forumId: $e");
+      rethrow; // Consistencia: rethrow aquí
     }
   }
 
-  /// Obtiene los comentarios en tiempo real de un hilo/post específico dentro de un foro.
   Stream<List<Map<String, dynamic>>> getCommentsForThread(String forumId, String threadId) {
     return _db
         .collection('foros_de_la_comunidad')
@@ -582,9 +571,8 @@ class FirestoreService {
         .orderBy('publicacion', descending: false)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) {
-              // Obtener los datos como Map<String, dynamic> directamente, o un mapa vacío si es null
-              final data = doc.data() as Map<String, dynamic>?;
-              return data ?? {}; // Retornar el mapa, o un mapa vacío si es nulo
+              final data = doc.data() as Map<String, dynamic>? ?? {}; // Asegurar que data no es null
+              return data;
             }).toList());
   }
 }

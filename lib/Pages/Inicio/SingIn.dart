@@ -6,10 +6,13 @@ import 'package:spotibook2/Pages/Index/Administradores/Verificaciones.dart';
 import 'package:spotibook2/Pages/Index/Editoriales/BibliotecaE.dart';
 
 import 'package:spotibook2/Services/Auth_Service.dart';
-import 'package:spotibook2/Services/firestore_service.dart';
+import 'package:spotibook2/Services/Firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:spotibook2/Services/RecoverPassService.dart';
 import 'package:uuid/uuid.dart';
+
+// Importa la página del Centro de Ayuda
+import 'package:spotibook2/Pages/Suport/HelpCenter.dart'; // ¡Asegúrate de que esta ruta sea correcta!
 
 class SingIn extends StatefulWidget {
   const SingIn({super.key});
@@ -65,7 +68,7 @@ class _SingInState extends State<SingIn> {
     if (email.isNotEmpty) {
       try {
         // Generar un token único para esta solicitud
-        final token = Uuid().v4();  // Genera un token único aleatorio
+        final token = Uuid().v4(); // Genera un token único aleatorio
         // Ahora generamos el enlace con el token
         final resetUrl = RecoverPassService().generarResetUrl(token);
         // Envía el correo con el enlace de restablecimiento
@@ -139,6 +142,18 @@ class _SingInState extends State<SingIn> {
                   const Text("Recuerdame"),
                 ],
               ),
+              // --- Nuevo botón "Centro de Ayuda" ---
+              TextButton(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=>HelpCenter()));
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Color(0xff2E4D4D),
+                  textStyle: TextStyle(fontSize: 10),
+                ),
+                child: Text("Centro de Ayuda"),
+              ),
+              // --- Fin del nuevo botón ---
               ElevatedButton(
                 onPressed: isFormValid
                     ? () async {

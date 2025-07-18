@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
-import 'package:spotibook2/Services/firestore_service.dart'; // ¡Importamos el servicio de Firestore REAL!
+import 'package:spotibook2/Services/Firestore_service.dart'; // ¡Importamos el servicio de Firestore REAL!
 import 'package:spotibook2/Pages/Index/Autores/NotificacionesA.dart'; // Para navegar a la pantalla de notificaciones
 import 'package:firebase_auth/firebase_auth.dart'; // Para obtener el UID real del usuario
 
