@@ -30,6 +30,9 @@ dependencies:
   fluttertoast: ^8.0.9
   carousel_slider: ^5.1.1
 
+  syncfusion_flutter_pdfviewer: ^30.1.40
+  epub_view: ^3.2.0
+
   flutter_localizations:
     sdk: flutter
 
