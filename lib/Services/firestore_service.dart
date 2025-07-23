@@ -21,7 +21,7 @@ class FirestoreService {
         'creadoEn': FieldValue.serverTimestamp(),
       };
       await _db.collection('users').doc(user.uid).set(userModel);
-      print("Usuario base ${user.uid} (${userType}) guardado con éxito en Firestore.");
+      print("Usuario base ${user.uid} ($userType) guardado con éxito en Firestore.");
     } catch (e) {
       print("Error al guardar el usuario base en Firestore: $e");
       rethrow;
@@ -227,11 +227,6 @@ class FirestoreService {
 
   Future<void> publishBook(Map<String, dynamic> bookData) async {
     try {
-      // *** INICIO DE LA SECCIÓN CRÍTICA DE URLs CORREGIDA ***
-
-      // 1. Manejar la fecha de publicación
-      // Si la solicitud ya tiene una fecha, úsala como fecha de publicación.
-      // De lo contrario, usa la marca de tiempo del servidor.
       if (bookData.containsKey('fechaSolicitud')) {
         bookData['fechaPublicacion'] = bookData['fechaSolicitud'];
         bookData.remove('fechaSolicitud');

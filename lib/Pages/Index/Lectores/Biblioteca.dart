@@ -27,7 +27,7 @@ class _BibliotecaState extends State<Biblioteca> {
   String? currentUserId; // Para almacenar el UID del usuario actual
 
   // Mapas para almacenar los libros por categoría de la biblioteca
-  Map<String, List<Map<String, dynamic>>> _userBooks = {
+  final Map<String, List<Map<String, dynamic>>> _userBooks = {
     'librosEnProgreso': [],
     'librosLeidos': [],
     'librosFavoritos': [],

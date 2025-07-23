@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class EmailService {
-  final String apiKey = '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';
+  final String apiKey = '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';
 
   Future<void> enviarCorreo({
     required String destinatario,
@@ -32,7 +32,7 @@ class EmailService {
         "from": {
           "email": "a20300690@ceti.mx",
         },
-        "template_id": "d-56dd645334cc4b8b8b4714a29f846275",
+        "template_id": "d-d5ac1c4b8f0243a981285b5a69849bbf ",
       }),
     );
 

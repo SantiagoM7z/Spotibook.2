@@ -7,16 +7,15 @@ import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Services/Firestore_service.dart';
 import 'package:spotibook2/Services/DropboxService.dart';
-import 'package:path_provider/path_provider.dart'; // Necesario para getTemporaryDirectory
-import 'dart:io'; // Necesario para File
-import 'package:http/http.dart' as http; // Necesario para http.get
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:epub_view/epub_view.dart';
 
 //* Vistas para PDF y EPUB (cargan desde archivo local)
-//----------------------------------------------------------------------
 class PDFViewPage extends StatelessWidget {
-  final File localPdfFile; // Ahora recibe un objeto File
+  final File localPdfFile; 
 
   const PDFViewPage({super.key, required this.localPdfFile});
 
@@ -28,14 +27,13 @@ class PDFViewPage extends StatelessWidget {
         backgroundColor: const Color(0xff2E4D4D),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      // Usa SfPdfViewer.file para cargar desde el archivo local
       body: SfPdfViewer.file(localPdfFile),
     );
   }
 }
 
 class EpubViewPage extends StatefulWidget {
-  final File localEpubFile; // Ahora recibe un objeto File
+  final File localEpubFile;
 
   const EpubViewPage({super.key, required this.localEpubFile});
 
@@ -58,7 +56,6 @@ class _EpubViewPageState extends State<EpubViewPage> {
   //* Función para cargar el archivo EPUB local
   Future<void> _loadEpub() async {
     try {
-      // Lee los bytes directamente del archivo local
       _epubController = EpubController(
         document: EpubReader.readBook(widget.localEpubFile.readAsBytesSync()),
       );
@@ -78,7 +75,6 @@ class _EpubViewPageState extends State<EpubViewPage> {
   @override
   void dispose() {
     _epubController.dispose();
-    // El archivo temporal se elimina en el .then() de _abrirArchivo, no aquí.
     super.dispose();
   }
 
@@ -107,8 +103,7 @@ class _EpubViewPageState extends State<EpubViewPage> {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              _errorMessage!,
-              textAlign: TextAlign.center,
+              _errorMessage!, textAlign: TextAlign.center, 
               style: const TextStyle(color: Colors.red, fontSize: 16),
             ),
           ),
@@ -118,7 +113,6 @@ class _EpubViewPageState extends State<EpubViewPage> {
 
     return Scaffold(
       appBar: AppBar(
-        // CAMBIO: Se corrigió el nombre del widget a EpubViewActualChapter
         title: EpubViewActualChapter(
           controller: _epubController,
           builder: (chapterValue) => Text(
@@ -134,10 +128,7 @@ class _EpubViewPageState extends State<EpubViewPage> {
   }
 }
 
-//----------------------------------------------------------------------
-
 //* Clase principal de la vista de detalles del libro (AoD)
-//----------------------------------------------------------------------
 class AoD extends StatefulWidget {
   final String documentId;
   final Map<String, dynamic> libro;
@@ -155,39 +146,36 @@ class AoD extends StatefulWidget {
 class _AoDState extends State<AoD> {
   bool? _isPremium;
 
-  // NUEVA FUNCIÓN: Para extraer la extensión del archivo limpiamente
+  //* Extraer la extensión del archivo limpiamente
   String _extractFileExtension(String url) {
-    // Primero, elimina cualquier parámetro de consulta (todo lo que viene después de '?')
     String cleanUrl = url.split('?').first;
-
-    // Luego, encuentra el último punto y toma la parte después de él
     int dotIndex = cleanUrl.lastIndexOf('.');
     if (dotIndex != -1 && dotIndex < cleanUrl.length - 1) {
       return cleanUrl.substring(dotIndex + 1).toLowerCase();
     }
-    return ''; // Si no se encuentra una extensión, devuelve una cadena vacía
+    return '';
   }
 
   //* Función para descargar archivos a una ubicación temporal
   Future<File?> _downloadFile(String url, String fileExtension) async {
-    debugPrint('[_downloadFile] Intentando descargar de: $url'); //* DEBUG: URL de descarga
+    debugPrint('[_downloadFile] Intentando descargar de: $url');
     try {
       final response = await http.get(Uri.parse(url));
-      debugPrint('[_downloadFile] Código de estado de la respuesta: ${response.statusCode}'); //* DEBUG: Código de estado HTTP
+      debugPrint('[_downloadFile] Código de estado de la respuesta: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final tempDir = await getTemporaryDirectory();
         final fileName = 'temp_file_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
         final file = File('${tempDir.path}/$fileName');
         await file.writeAsBytes(response.bodyBytes);
-        debugPrint('[_downloadFile] Archivo descargado localmente a: ${file.path}'); //* DEBUG: Ruta del archivo descargado
+        debugPrint('[_downloadFile] Archivo descargado localmente a: ${file.path}');
         return file;
       } else {
-        debugPrint('[_downloadFile] Error al descargar archivo desde $url: ${response.statusCode}'); //* ERROR: Descarga fallida (código no 200)
+        debugPrint('[_downloadFile] Error al descargar archivo desde $url: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      debugPrint('[_downloadFile] Excepción al descargar archivo desde $url: $e'); //* ERROR: Excepción durante la descarga
+      debugPrint('[_downloadFile] Excepción al descargar archivo desde $url: $e');
       return null;
     }
   }
@@ -201,7 +189,7 @@ class _AoDState extends State<AoD> {
       }
       return 'Etiqueta no encontrada';
     } catch (e) {
-      debugPrint('Error al obtener nombre de etiqueta $tagId: $e'); //* ERROR: Fallo al obtener nombre de etiqueta
+      debugPrint('Error al obtener nombre de etiqueta $tagId: $e');
       return 'Error al cargar etiqueta';
     }
   }
@@ -216,7 +204,7 @@ class _AoDState extends State<AoD> {
           backgroundColor: Colors.red,
         ),
       );
-      debugPrint('[_abrirArchivo] URL de archivo de revisión nula o vacía.'); //* DEBUG: URL no disponible
+      debugPrint('[_abrirArchivo] URL de archivo de revisión nula o vacía.');
       return;
     }
 
@@ -242,14 +230,13 @@ class _AoDState extends State<AoD> {
         }
       }
     }
-    // FIN DEL CAMBIO CLAVE
 
-    debugPrint('[_abrirArchivo] URL ORIGINAL: $url'); //* DEBUG: URL original del libro
-    debugPrint('[_abrirArchivo] URL FINAL PARA DESCARGA: $finalUrl'); //* DEBUG: URL transformada para descarga
+    debugPrint('[_abrirArchivo] URL ORIGINAL: $url');
+    debugPrint('[_abrirArchivo] URL FINAL PARA DESCARGA: $finalUrl');
 
     //* Extracción de la extensión del archivo
     final fileExtension = _extractFileExtension(finalUrl);
-    debugPrint('[_abrirArchivo] EXTENSIÓN DETECTADA: $fileExtension'); //* DEBUG: Extensión del archivo
+    debugPrint('[_abrirArchivo] EXTENSIÓN DETECTADA: $fileExtension');
 
     //* Mostrar un diálogo de carga mientras se descarga
     BuildContext? dialogContext;
@@ -277,35 +264,33 @@ class _AoDState extends State<AoD> {
       //* Intento de descarga del archivo localmente
       localFile = await _downloadFile(finalUrl, fileExtension);
     } catch (e) {
-      debugPrint('[_abrirArchivo] Error durante la descarga del archivo: $e'); //* ERROR: Excepción en la descarga
-      localFile = null; // Asegurarse de que sea null en caso de excepción
+      debugPrint('[_abrirArchivo] Error durante la descarga del archivo: $e');
+      localFile = null;
     } finally {
       //* Cerrar el diálogo de carga
       if (dialogContext != null && Navigator.of(dialogContext!).canPop()) {
         Navigator.pop(dialogContext!);
-        debugPrint('[_abrirArchivo] Diálogo de carga cerrado.'); //* DEBUG: Diálogo de carga cerrado
+        debugPrint('[_abrirArchivo] Diálogo de carga cerrado.');
       }
     }
 
     //* Lógica post-descarga: Verificación y visualización
     if (localFile != null) {
-      debugPrint('[_abrirArchivo] Archivo descargado exitosamente. Intentando abrir con visor interno.'); //* DEBUG: Archivo disponible
+      debugPrint('[_abrirArchivo] Archivo descargado exitosamente. Intentando abrir con visor interno.');
       if (fileExtension == 'pdf') {
         //* Abrir PDF con visor interno
         Navigator.push(
           context,
           MaterialPageRoute(
-            // CAMBIO: Se añadió '!' para asegurar que localFile no es nulo
             builder: (_) => PDFViewPage(localPdfFile: localFile!),
           ),
-        ).then((_) async { // Usar async aquí para await localFile.delete()
+        ).then((_) async {
           //* Eliminar el archivo temporal después de cerrar el visor PDF
           try {
-            // CAMBIO: Se añadió '!' para asegurar que localFile no es nulo
             await localFile!.delete();
-            debugPrint('[_abrirArchivo] Archivo PDF temporal eliminado.'); //* DEBUG: Archivo PDF eliminado
+            debugPrint('[_abrirArchivo] Archivo PDF temporal eliminado.');
           } catch (e) {
-            debugPrint('[_abrirArchivo] Error al eliminar archivo PDF temporal: $e'); //* ERROR: Fallo al eliminar PDF temporal
+            debugPrint('[_abrirArchivo] Error al eliminar archivo PDF temporal: $e');
           }
         });
       } else if (fileExtension == 'epub') {
@@ -313,26 +298,24 @@ class _AoDState extends State<AoD> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            // CAMBIO: Se añadió '!' para asegurar que localFile no es nulo
             builder: (_) => EpubViewPage(localEpubFile: localFile!),
           ),
-        ).then((_) async { // Usar async aquí para await localFile.delete()
+        ).then((_) async {
           //* Eliminar el archivo temporal después de cerrar el visor EPUB
           try {
-            // CAMBIO: Se añadió '!' para asegurar que localFile no es nulo
             await localFile!.delete();
-            debugPrint('[_abrirArchivo] Archivo EPUB temporal eliminado.'); //* DEBUG: Archivo EPUB eliminado
+            debugPrint('[_abrirArchivo] Archivo EPUB temporal eliminado.');
           } catch (e) {
-            debugPrint('[_ababrirArchivo] Error al eliminar archivo EPUB temporal: $e'); //* ERROR: Fallo al eliminar EPUB temporal
+            debugPrint('[_ababrirArchivo] Error al eliminar archivo EPUB temporal: $e');
           }
         });
       } else {
         //* Archivo descargado pero no es PDF/EPUB, intentar abrir externamente la URL original
-        debugPrint('[_abrirArchivo] Archivo descargado pero no es PDF/EPUB ($fileExtension). Intentando abrir URL original externamente.'); //* DEBUG: Tipo de archivo no soportado internamente
+        debugPrint('[_abrirArchivo] Archivo descargado pero no es PDF/EPUB ($fileExtension). Intentando abrir URL original externamente.');
         try {
-          if (await canLaunchUrl(Uri.parse(url))) { // Usar la URL original para abrir externamente
+          if (await canLaunchUrl(Uri.parse(url))) {
             await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-            debugPrint('[_abrirArchivo] URL original abierta externamente: $url'); //* DEBUG: URL abierta externamente
+            debugPrint('[_abrirArchivo] URL original abierta externamente: $url');
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -340,10 +323,10 @@ class _AoDState extends State<AoD> {
                 backgroundColor: Colors.red,
               ),
             );
-            debugPrint('[_abrirArchivo] No se pudo abrir la URL original externamente para tipo $fileExtension.'); //* ERROR: No se pudo abrir URL externa
+            debugPrint('[_abrirArchivo] No se pudo abrir la URL original externamente para tipo $fileExtension.');
           }
         } catch (e) {
-          debugPrint('[_abrirArchivo] Error al abrir archivo externamente: $e'); //* ERROR: Excepción al abrir externamente
+          debugPrint('[_abrirArchivo] Error al abrir archivo externamente: $e');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error al intentar abrir el archivo: ${e.toString()}'),
@@ -353,36 +336,31 @@ class _AoDState extends State<AoD> {
         }
         //* Asegurarse de eliminar el archivo local si se descargó pero no se usó con un visor interno
         try {
-          // CAMBIO: Se añadió '!' para asegurar que localFile no es nulo
           await localFile.delete();
-          debugPrint('[_abrirArchivo] Archivo temporal no utilizado eliminado.'); //* DEBUG: Archivo temporal eliminado
+          debugPrint('[_abrirArchivo] Archivo temporal no utilizado eliminado.');
         } catch (e) {
-          debugPrint('[_abrirArchivo] Error al eliminar archivo temporal no utilizado: $e'); //* ERROR: Fallo al eliminar temporal no utilizado
+          debugPrint('[_abrirArchivo] Error al eliminar archivo temporal no utilizado: $e');
         }
       }
     } else {
       //* La descarga falló completamente
-      debugPrint('[_abrirArchivo] La descarga del archivo local falló. Mostrando mensaje de error.'); //* ERROR: Descarga fallida
+      debugPrint('[_abrirArchivo] La descarga del archivo local falló. Mostrando mensaje de error.');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('No se pudo descargar el archivo para visualización. Intenta de nuevo.'),
           backgroundColor: Colors.red,
         ),
       );
-      // NO DEBE HABER NINGÚN launchUrl AQUÍ. Si te redirige, es por un launchUrl en otra parte.
     }
   }
 
-  //----------------------------------------------------------------------
-
   //* Función para ver la portada de revisión externamente
-  //----------------------------------------------------------------------
   Future<void> _verPortada(BuildContext context) async {
     try {
       final url = widget.libro['portadaUrlRevision'];
       if (url != null && await canLaunchUrl(Uri.parse(url))) {
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-        debugPrint('[verPortada] Portada de revisión abierta externamente: $url'); //* DEBUG: Portada abierta
+        debugPrint('[verPortada] Portada de revisión abierta externamente: $url');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -390,10 +368,10 @@ class _AoDState extends State<AoD> {
             backgroundColor: Colors.red,
           ),
         );
-        debugPrint('[verPortada] Fallo al abrir portada de revisión. URL: $url'); //* ERROR: Fallo al abrir portada
+        debugPrint('[verPortada] Fallo al abrir portada de revisión. URL: $url');
       }
     } catch (e) {
-      debugPrint('[verPortada] Error al abrir portada: $e'); //* ERROR: Excepción al abrir portada
+      debugPrint('[verPortada] Error al abrir portada: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al abrir portada: ${e.toString()}'),
@@ -403,10 +381,7 @@ class _AoDState extends State<AoD> {
     }
   }
 
-  //----------------------------------------------------------------------
-
   //* Función para aprobar y publicar un libro
-  //----------------------------------------------------------------------
   Future<void> _aprobarLibro(BuildContext context) async {
     if (_isPremium == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -415,7 +390,7 @@ class _AoDState extends State<AoD> {
           backgroundColor: Colors.orange,
         ),
       );
-      debugPrint('[aprobarLibro] Selección Premium/Gratuito pendiente.'); //* DEBUG: Selección premium requerida
+      debugPrint('[aprobarLibro] Selección Premium/Gratuito pendiente.');
       return;
     }
 
@@ -452,7 +427,7 @@ class _AoDState extends State<AoD> {
       final String? portadaUrlRevision = widget.libro['portadaUrlRevision'];
       if (portadaUrlRevision != null && portadaUrlRevision.isNotEmpty) {
         final String fileName = 'portada_${widget.documentId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final String dropboxPath = '/Publicaciones/Portadas/${fileName}';
+        final String dropboxPath = '/Publicaciones/Portadas/$fileName';
 
         try {
           final response = await http.get(Uri.parse(portadaUrlRevision));
@@ -463,29 +438,28 @@ class _AoDState extends State<AoD> {
 
             portadaUrlPublicado = await dropboxService.uploadFile(tempFile, dropboxPath);
             await tempFile.delete();
-            debugPrint('[aprobarLibro] Portada publicada en Dropbox: $portadaUrlPublicado'); //* DEBUG: Portada publicada
+            debugPrint('[aprobarLibro] Portada publicada en Dropbox: $portadaUrlPublicado');
           } else {
-            debugPrint('[aprobarLibro] Error al descargar portada de revisión: ${response.statusCode}'); //* ERROR: Descarga de portada fallida
+            debugPrint('[aprobarLibro] Error al descargar portada de revisión: ${response.statusCode}');
           }
         } catch (e) {
-          debugPrint('[aprobarLibro] Excepción al descargar/subir portada: $e'); //* ERROR: Excepción en portada
+          debugPrint('[aprobarLibro] Excepción al descargar/subir portada: $e');
         }
       }
 
       //* Procesamiento del archivo del libro de revisión
       final String? archivoUrlRevision = widget.libro['archivoUrlRevision'];
       if (archivoUrlRevision != null && archivoUrlRevision.isNotEmpty) {
-        String fileExtension = '.pdf'; // Valor por defecto
-        // CAMBIO: Se usa la nueva función para extraer la extensión para el nombre de archivo temporal
+        String fileExtension = '.pdf';
         fileExtension = _extractFileExtension(archivoUrlRevision);
         if (fileExtension.isNotEmpty) {
-          fileExtension = '.' + fileExtension;
+          fileExtension = '.$fileExtension';
         } else {
-          fileExtension = '.tmp'; // Si no se encuentra, usar una extensión temporal segura
+          fileExtension = '.tmp';
         }
 
-        final String fileName = 'libro_${widget.documentId}_${DateTime.now().millisecondsSinceEpoch}${fileExtension}';
-        final String dropboxPath = '/Publicaciones/Libros/${fileName}';
+        final String fileName = 'libro_${widget.documentId}_${DateTime.now().millisecondsSinceEpoch}$fileExtension';
+        final String dropboxPath = '/Publicaciones/Libros/$fileName';
 
         try {
           final response = await http.get(Uri.parse(archivoUrlRevision));
@@ -496,12 +470,12 @@ class _AoDState extends State<AoD> {
 
             archivoUrlPublicado = await dropboxService.uploadFile(tempFile, dropboxPath);
             await tempFile.delete();
-            debugPrint('[aprobarLibro] Archivo de libro publicado en Dropbox: $archivoUrlPublicado'); //* DEBUG: Archivo publicado
+            debugPrint('[aprobarLibro] Archivo de libro publicado en Dropbox: $archivoUrlPublicado');
           } else {
-            debugPrint('[aprobarLibro] Error al descargar archivo de revisión: ${response.statusCode}'); //* ERROR: Descarga de archivo fallida
+            debugPrint('[aprobarLibro] Error al descargar archivo de revisión: ${response.statusCode}');
           }
         } catch (e) {
-          debugPrint('[aprobarLibro] Excepción al descargar/subir archivo: $e'); //* ERROR: Excepción en archivo
+          debugPrint('[aprobarLibro] Excepción al descargar/subir archivo: $e');
         }
       }
 
@@ -535,7 +509,7 @@ class _AoDState extends State<AoD> {
       //* Publicar libro en Firestore y actualizar estado de solicitud
       await firestoreService.publishBook(libroPublicadoData);
       await firestoreService.updateBookRequestStatus(widget.documentId, 'aprobado');
-      debugPrint('[aprobarLibro] Libro aprobado y estado actualizado en Firestore.'); //* DEBUG: Libro aprobado en Firestore
+      debugPrint('[aprobarLibro] Libro aprobado y estado actualizado en Firestore.');
 
       //* Cerrar diálogo de progreso
       if (progressDialogContext != null && Navigator.of(progressDialogContext!).canPop()) {
@@ -552,7 +526,7 @@ class _AoDState extends State<AoD> {
         ),
       );
     } catch (e) {
-      debugPrint('[aprobarLibro] Error general al aprobar libro: $e'); //* ERROR: Error general en aprobación
+      debugPrint('[aprobarLibro] Error general al aprobar libro: $e');
       //* Cerrar diálogo de progreso en caso de error
       if (progressDialogContext != null && Navigator.of(progressDialogContext!).canPop()) {
         Navigator.pop(progressDialogContext!);
@@ -566,10 +540,7 @@ class _AoDState extends State<AoD> {
     }
   }
 
-  //----------------------------------------------------------------------
-
   //* Función para rechazar un libro
-  //----------------------------------------------------------------------
   Future<void> _rechazarLibro(BuildContext context) async {
     final FirestoreService firestoreService = FirestoreService();
     final TextEditingController motivoController = TextEditingController();
@@ -613,7 +584,7 @@ class _AoDState extends State<AoD> {
                 return;
               }
 
-              Navigator.pop(dialogContext); // Cerrar el diálogo del motivo
+              Navigator.pop(dialogContext);
 
               //* Mostrar diálogo de progreso de rechazo
               showDialog(
@@ -642,14 +613,14 @@ class _AoDState extends State<AoD> {
                   'rechazado',
                   motivoRechazo: motivoController.text.trim(),
                 );
-                debugPrint('[rechazarLibro] Libro rechazado y estado actualizado en Firestore.'); //* DEBUG: Libro rechazado en Firestore
+                debugPrint('[rechazarLibro] Libro rechazado y estado actualizado en Firestore.');
 
                 //* Cerrar diálogo de progreso
                 if (progressDialogContext != null && Navigator.of(progressDialogContext!).canPop()) {
                   Navigator.pop(progressDialogContext!);
                 }
 
-                Navigator.pop(context); // Regresar a la pantalla anterior (desde AoD)
+                Navigator.pop(context);
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -658,7 +629,7 @@ class _AoDState extends State<AoD> {
                   ),
                 );
               } catch (e) {
-                debugPrint('[rechazarLibro] Error al rechazar libro: $e'); //* ERROR: Error al rechazar
+                debugPrint('[rechazarLibro] Error al rechazar libro: $e');
                 //* Cerrar diálogo de progreso en caso de error
                 if (progressDialogContext != null && Navigator.of(progressDialogContext!).canPop()) {
                   Navigator.pop(progressDialogContext!);
@@ -678,10 +649,7 @@ class _AoDState extends State<AoD> {
     );
   }
 
-  //----------------------------------------------------------------------
-
   //* Construcción de la interfaz de usuario principal de AoD
-  //----------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     final colorPrincipal = const Color(0xff2E4D4D);
@@ -805,7 +773,7 @@ class _AoDState extends State<AoD> {
                           backgroundColor: colorPrincipal.withOpacity(0.1),
                         );
                       } else if (snapshot.hasError) {
-                        debugPrint('Error al cargar nombre de etiqueta en UI: ${snapshot.error}'); //* ERROR: UI de etiqueta
+                        debugPrint('Error al cargar nombre de etiqueta en UI: ${snapshot.error}');
                         return Chip(
                           label: const Text('Error', style: TextStyle(color: Colors.red)),
                           backgroundColor: Colors.red.withOpacity(0.1),

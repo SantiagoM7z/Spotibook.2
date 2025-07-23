@@ -17,7 +17,7 @@ class Verificaciones extends StatefulWidget {
 }
 
 class _VerificacionesState extends State<Verificaciones> {
-  int _selectedIndex = 0;
+  final int _selectedIndex = 0;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
