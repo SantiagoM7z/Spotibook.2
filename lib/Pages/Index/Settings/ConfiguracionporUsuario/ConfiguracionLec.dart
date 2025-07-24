@@ -8,6 +8,8 @@ import 'package:spotibook2/Pages/Index/Settings/Noti.dart';
 import 'package:spotibook2/Pages/Index/Settings/Pago.dart';
 import 'package:spotibook2/Pages/Index/Settings/SoportConf.dart';
 import 'package:spotibook2/Pages/Index/Settings/TemaConf.dart';
+import 'package:spotibook2/Pages/Suport/TermsYCond.dart';
+import 'package:spotibook2/Pages/Suport/HelpCenter.dart';
 
 class ConfiguracionLec extends StatefulWidget {
   const ConfiguracionLec({super.key});
@@ -116,6 +118,28 @@ class _ConfiguracionLecState extends State<ConfiguracionLec> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => TemaConf()),
+              );
+            },
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.color_lens),
+            title: Text('Configuración del tema'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => TermsYCond()),
+              );
+            },
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.color_lens),
+            title: Text('Configuración del tema'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => HelpCenter()),
               );
             },
           ),
