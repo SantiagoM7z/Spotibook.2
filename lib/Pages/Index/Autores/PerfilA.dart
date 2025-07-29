@@ -3,13 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spotibook2/Pages/Index/Autores/AgregarA.dart';
 import 'package:spotibook2/Pages/Index/Autores/NotificacionesA.dart';
+import 'package:spotibook2/Pages/Index/Estadisticas/Estadisticas.dart';
 import 'package:spotibook2/Pages/Index/Settings/ConfiguracionporUsuario/ConfiguracionAut.dart';
 import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart';
 import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
 import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
-import 'package:spotibook2/Pages/Index/Foros/ForosporUsuario/ForosAutores.dart'; // Para navegar a Foros
+import 'package:spotibook2/Pages/Index/Foros/ForosporUsuario/ForosAutores.dart';
+import 'package:spotibook2/Stripe/StripeComponent.dart'; // Para navegar a Foros
 
 class PerfilA extends StatefulWidget {
   const PerfilA({super.key});
@@ -19,7 +21,8 @@ class PerfilA extends StatefulWidget {
 }
 
 class _PerfilAState extends State<PerfilA> {
-  int _selectedIndex = 4; // Changed to 4 to reflect the new position of 'Perfil'
+  int _selectedIndex =
+      4; // Changed to 4 to reflect the new position of 'Perfil'
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -27,9 +30,11 @@ class _PerfilAState extends State<PerfilA> {
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _correoController = TextEditingController();
   final TextEditingController _contrasenaController = TextEditingController();
-  final TextEditingController _confirmContrasenaController = TextEditingController(); // Added confirm password controller
+  final TextEditingController _confirmContrasenaController =
+      TextEditingController(); // Added confirm password controller
 
-  String? _selectedProfileImagePath; // Changed to nullable and will be populated from Firestore or default
+  String?
+      _selectedProfileImagePath; // Changed to nullable and will be populated from Firestore or default
   final List<String> _profileImages = [
     'assets/Profile_pics/profile_1.png',
     'assets/Profile_pics/profile_2.png',
@@ -57,15 +62,22 @@ class _PerfilAState extends State<PerfilA> {
   void _cargarDatosUsuario() async {
     final user = _auth.currentUser;
     if (user != null) {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get(); // Changed to 'users' collection for consistency
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .get(); // Changed to 'users' collection for consistency
 
       if (userDoc.exists) {
         final userData = userDoc.data() as Map<String, dynamic>;
         setState(() {
-          _nombreController.text = userData['username'] ?? user.displayName ?? ''; // Consistency with 'username'
+          _nombreController.text = userData['username'] ??
+              user.displayName ??
+              ''; // Consistency with 'username'
           _correoController.text = user.email ?? '';
-          _selectedProfileImagePath = userData['profilePictureUrl'] ?? _profileImages[0];
-          _currentUserType = userData['userType'] ?? 'Autor'; // Default to 'Autor' for this page
+          _selectedProfileImagePath =
+              userData['profilePictureUrl'] ?? _profileImages[0];
+          _currentUserType = userData['userType'] ??
+              'Autor'; // Default to 'Autor' for this page
           _selectedUserType = _currentUserType;
         });
       } else {
@@ -101,14 +113,16 @@ class _PerfilAState extends State<PerfilA> {
       }
       if (newPassword.length < 8) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('La contraseña debe tener al menos 8 caracteres.')),
+          const SnackBar(
+              content: Text('La contraseña debe tener al menos 8 caracteres.')),
         );
         return;
       }
     }
 
     try {
-      if (_nombreController.text.isNotEmpty && user.displayName != _nombreController.text) {
+      if (_nombreController.text.isNotEmpty &&
+          user.displayName != _nombreController.text) {
         await user.updateDisplayName(_nombreController.text);
       }
 
@@ -132,8 +146,10 @@ class _PerfilAState extends State<PerfilA> {
         print("Tipo de usuario actualizado de Lector a Autor para ${user.uid}");
       }
 
-
-      await _firestore.collection('users').doc(user.uid).set(updateData, SetOptions(merge: true));
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .set(updateData, SetOptions(merge: true));
 
       await user.reload();
 
@@ -145,7 +161,6 @@ class _PerfilAState extends State<PerfilA> {
       _confirmContrasenaController.clear();
 
       _cargarDatosUsuario();
-
     } catch (e) {
       print("Error al guardar cambios: $e");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -163,19 +178,23 @@ class _PerfilAState extends State<PerfilA> {
 
     switch (index) {
       case 0:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => CatalogoA()));
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => CatalogoA()));
         break;
       case 1:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => BuscarA()));
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => BuscarA()));
         break;
       case 2:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AgregarA()));
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => AgregarA()));
         break;
       case 3:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => BibliotecaA()));
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => BibliotecaA()));
         break;
       case 4:
-      // Current page, do nothing
+        // Current page, do nothing
         break;
     }
   }
@@ -210,9 +229,10 @@ class _PerfilAState extends State<PerfilA> {
                         child: CircleAvatar(
                           radius: 40,
                           backgroundImage: AssetImage(imagePath),
-                          backgroundColor: _selectedProfileImagePath == imagePath
-                              ? const Color(0xff2E4D4D).withOpacity(0.5)
-                              : Colors.grey[300],
+                          backgroundColor:
+                              _selectedProfileImagePath == imagePath
+                                  ? const Color(0xff2E4D4D).withOpacity(0.5)
+                                  : Colors.grey[300],
                         ),
                       ),
                     );
@@ -238,7 +258,8 @@ class _PerfilAState extends State<PerfilA> {
   }
 
   Future<void> _mostrarDialogoCambiarNombre() async {
-    TextEditingController tempNameController = TextEditingController(text: _nombreController.text);
+    TextEditingController tempNameController =
+        TextEditingController(text: _nombreController.text);
 
     await showDialog(
       context: context,
@@ -247,7 +268,8 @@ class _PerfilAState extends State<PerfilA> {
           title: const Text('Cambiar Nombre de Usuario'),
           content: TextField(
             controller: tempNameController,
-            decoration: const InputDecoration(labelText: 'Nuevo Nombre de Usuario'),
+            decoration:
+                const InputDecoration(labelText: 'Nuevo Nombre de Usuario'),
           ),
           actions: [
             TextButton(
@@ -334,7 +356,6 @@ class _PerfilAState extends State<PerfilA> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -347,12 +368,13 @@ class _PerfilAState extends State<PerfilA> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications), 
-            color: Colors.white, 
+            icon: const Icon(Icons.notifications),
+            color: Colors.white,
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NotificacionesA()),
+                MaterialPageRoute(
+                    builder: (context) => const NotificacionesA()),
               );
             },
           ),
@@ -368,7 +390,9 @@ class _PerfilAState extends State<PerfilA> {
                   radius: 50,
                   backgroundImage: _selectedProfileImagePath != null
                       ? AssetImage(_selectedProfileImagePath!)
-                      : const NetworkImage('https://cdn-icons-png.flaticon.com/512/149/149071.png') as ImageProvider,
+                      : const NetworkImage(
+                              'https://cdn-icons-png.flaticon.com/512/149/149071.png')
+                          as ImageProvider,
                   backgroundColor: Colors.grey[300],
                 ),
               ),
@@ -377,12 +401,12 @@ class _PerfilAState extends State<PerfilA> {
                 child: const Text("Cambiar foto de perfil"),
               ),
               const SizedBox(height: 20),
-
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   children: [
-                    const Text("Nombre de Usuario: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text("Nombre de Usuario: ",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     Expanded(child: Text(_nombreController.text)),
                     TextButton(
                       onPressed: _mostrarDialogoCambiarNombre,
@@ -391,22 +415,22 @@ class _PerfilAState extends State<PerfilA> {
                   ],
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   children: [
-                    const Text("Correo: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text("Correo: ",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     Expanded(child: Text(_correoController.text)),
                   ],
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   children: [
-                    const Text("Tipo de Usuario: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text("Tipo de Usuario: ",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     Expanded(child: Text(_currentUserType ?? 'Cargando...')),
                     TextButton(
                       onPressed: _mostrarDialogoCambiarTipoUsuario,
@@ -415,18 +439,18 @@ class _PerfilAState extends State<PerfilA> {
                   ],
                 ),
               ),
-
               TextField(
                 controller: _contrasenaController,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: "Nueva Contraseña"),
+                decoration:
+                    const InputDecoration(labelText: "Nueva Contraseña"),
               ),
               TextField(
                 controller: _confirmContrasenaController,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: "Confirmar Nueva Contraseña"),
+                decoration: const InputDecoration(
+                    labelText: "Confirmar Nueva Contraseña"),
               ),
-
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: _guardarCambios,
@@ -434,9 +458,11 @@ class _PerfilAState extends State<PerfilA> {
                   backgroundColor: const Color(0xff2E4D4D),
                   foregroundColor: Colors.white,
                   shape: const StadiumBorder(),
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 ),
-                child: const Text("Guardar Cambios", style: TextStyle(fontSize: 16)),
+                child: const Text("Guardar Cambios",
+                    style: TextStyle(fontSize: 16)),
               ),
             ],
           ),
@@ -450,7 +476,10 @@ class _PerfilAState extends State<PerfilA> {
               decoration: BoxDecoration(color: Color(0xff2E4D4D)),
               child: Text(
                 'Menú',
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold),
               ),
             ),
             ListTile(
@@ -460,6 +489,10 @@ class _PerfilAState extends State<PerfilA> {
                 Navigator.pop(context);
                 print("Plan de Suscripción");
                 // TODO: Navegar a la página del plan de suscripción
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const StripeComponent()));
               },
             ),
             ListTile(
@@ -467,7 +500,10 @@ class _PerfilAState extends State<PerfilA> {
               leading: const Icon(Icons.forum),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const ForosAutores())); 
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ForosAutores()));
               },
             ),
             ListTile(
@@ -475,8 +511,10 @@ class _PerfilAState extends State<PerfilA> {
               leading: const Icon(Icons.insights),
               onTap: () {
                 Navigator.pop(context); // Cierra el drawer
-                print("Navegar a Mis Estadísticas de Autor");
-                // TODO: Navegar a una página de estadísticas del autor
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const Estadisticas()));
               },
             ),
             ListTile(
@@ -484,7 +522,10 @@ class _PerfilAState extends State<PerfilA> {
               leading: const Icon(Icons.settings),
               onTap: () {
                 Navigator.pop(context); // Cierra el drawer
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfiguracionAut()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ConfiguracionAut()));
               },
             ),
             const Divider(), // Divisor visual
@@ -492,7 +533,9 @@ class _PerfilAState extends State<PerfilA> {
               title: const Text('Cerrar sesión'),
               onTap: () async {
                 await AuthService().signOut();
-                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => SingIn()),
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => SingIn()),
                   (route) => false,
                 );
               },
@@ -511,7 +554,8 @@ class _PerfilAState extends State<PerfilA> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Catálogo'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
           BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Agregar'),
-          BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Biblioteca'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.library_books), label: 'Biblioteca'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
       ),

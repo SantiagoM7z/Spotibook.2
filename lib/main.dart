@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:spotibook2/env.dart';
 import 'firebase_options.dart';
 
 import 'package:spotibook2/Pages/Inicio/AccountType.dart';
@@ -7,7 +9,7 @@ import 'package:spotibook2/Pages/Suport/HelpCenter.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
 import 'package:spotibook2/Pages/Suport/TermsYCond.dart';
 
-import 'package:spotibook2/Services/Auth_Service.dart'; 
+import 'package:spotibook2/Services/Auth_Service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:spotibook2/Pages/Index/Administradores/Verificaciones.dart';
@@ -20,6 +22,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  Stripe.publishableKey = stripePublishableKey;
 
   runApp(Spotibook());
 }
@@ -45,63 +48,81 @@ class Spotibook extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    Text("BIENVENIDO", textAlign: TextAlign.center,
+                    Text(
+                      "BIENVENIDO",
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontFamily:"Lora",
-                        color: Colors.black,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold
-                      ),
+                          fontFamily: "Lora",
+                          color: Colors.black,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold),
                     ),
-                    Text("SpotiBook", textAlign: TextAlign.center,
+                    Text(
+                      "SpotiBook",
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontFamily:"Lora",
-                        color: Colors.black,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold
-                      ),
+                          fontFamily: "Lora",
+                          color: Colors.black,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold),
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context)=>SingIn()));
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => SingIn()));
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xff2E4D4D),
-                        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15)
-                      ),
-                      child: Text("Iniciar Sesión", style: TextStyle(fontSize: 20, color: Colors.white),
+                          backgroundColor: Color(0xff2E4D4D),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 40, vertical: 15)),
+                      child: Text(
+                        "Iniciar Sesión",
+                        style: TextStyle(fontSize: 20, color: Colors.white),
                       ),
                     ),
-                    TextButton(onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=>AccountType()));
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Color(0xff2E4D4D),
-                      textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    child: Text("Registrarse"),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => AccountType()));
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Color(0xff2E4D4D),
+                        textStyle: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      child: Text("Registrarse"),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.max,
                       children: [
-                        TextButton(onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context)=>TermsYCond()));
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Color(0xff2E4D4D),
-                          textStyle: TextStyle(fontSize: 10),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => TermsYCond()));
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: Color(0xff2E4D4D),
+                            textStyle: TextStyle(fontSize: 10),
+                          ),
+                          child: Text("Terminos y Condiciones"),
                         ),
-                        child: Text("Terminos y Condiciones"),
-                        ),
-                        TextButton(onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context)=>HelpCenter()));
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Color(0xff2E4D4D),
-                          textStyle: TextStyle(fontSize: 10),
-                        ),
-                        child: Text("Centro de Ayuda"),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => HelpCenter()));
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: Color(0xff2E4D4D),
+                            textStyle: TextStyle(fontSize: 10),
+                          ),
+                          child: Text("Centro de Ayuda"),
                         ),
                       ],
                     )
@@ -133,7 +154,7 @@ class Spotibook extends StatelessWidget {
         }
         if (snapshot.data == "Admin") {
           return Verificaciones();
-        } else if (snapshot.data == "Lector"){
+        } else if (snapshot.data == "Lector") {
           return Catalogo();
         } else if (snapshot.data == "Autor") {
           return CatalogoA();

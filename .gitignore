@@ -48,3 +48,5 @@ app.*.map.json
 .gradle/
 gradle-wrapper.jar
 gradle-wrapper.properties
+
+lib/env.dart
