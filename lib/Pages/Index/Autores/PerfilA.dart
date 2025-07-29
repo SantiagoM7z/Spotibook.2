@@ -10,7 +10,8 @@ import 'package:spotibook2/Pages/Index/Autores/BuscarA.dart';
 import 'package:spotibook2/Pages/Index/Autores/CatalogoA.dart';
 import 'package:spotibook2/Pages/Index/Autores/BibliotecaA.dart';
 import 'package:spotibook2/Pages/Inicio/SingIn.dart';
-import 'package:spotibook2/Pages/Index/Foros/ForosporUsuario/ForosAutores.dart'; // Para navegar a Foros
+import 'package:spotibook2/Pages/Index/Foros/ForosporUsuario/ForosAutores.dart';
+import 'package:spotibook2/Stripe/StripeComponent.dart'; // Para navegar a Foros
 
 class PerfilA extends StatefulWidget {
   const PerfilA({super.key});
@@ -488,6 +489,10 @@ class _PerfilAState extends State<PerfilA> {
                 Navigator.pop(context);
                 print("Plan de Suscripción");
                 // TODO: Navegar a la página del plan de suscripción
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const StripeComponent()));
               },
             ),
             ListTile(
