@@ -1,17 +1,20 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
-import 'package:spotibook2/Stripe/status_view.dart';
+import 'package:spotibook2/Stripe/snackbars.dart';
 import 'package:spotibook2/env.dart';
 
 class StripeService {
   StripeService._();
   static final StripeService instance = StripeService._();
 
-  Future<void> makePayment(BuildContext context) async {
+  Future<void> makePayment(BuildContext context, int amount, bool isYearly,
+      FirebaseAuth _auth) async {
     try {
       String? paymentIntentClientSecret =
-          await _createPaymentIntent(100, 'mxn');
+          await _createPaymentIntent(amount, 'mxn');
 
       if (paymentIntentClientSecret == null) return;
 
@@ -20,10 +23,11 @@ class StripeService {
               paymentIntentClientSecret: paymentIntentClientSecret,
               merchantDisplayName: 'PetWalks Enterprise'));
 
-      await _processPayment(context);
+      await _processPayment(context, isYearly, _auth);
     } catch (e) {
       print(e.toString());
-      _navigateToStatusScreen(context, 'Error', e.toString());
+
+      showErrorSnackBar(context, e.toString());
     }
   }
 
@@ -53,57 +57,48 @@ class StripeService {
     }
   }
 
-  Future<void> _processPayment(BuildContext context) async {
+  Future<void> _processPayment(
+      BuildContext context, bool isYearly, FirebaseAuth auth) async {
     try {
       await Stripe.instance.presentPaymentSheet();
-      _navigateToStatusScreen(
-        context,
-        'Success',
-        'Payment completed successfully!',
-      );
+      handlePro(context, isYearly, auth);
+      showSuccessSnackBar(context);
+      return;
     } on StripeException catch (e) {
       if (e.error.code == FailureCode.Canceled) {
-        // User cancelled the payment sheet - ignore silently
+        showErrorSnackBar(context, 'Payment was cancelled by the user.');
         return;
       }
-      _navigateToStatusScreen(
-          context, 'Error', e.error.localizedMessage ?? e.toString());
+
+      showErrorSnackBar(context, e.toString());
     } catch (e) {
-      _navigateToStatusScreen(context, 'Error', e.toString());
+      showErrorSnackBar(context, e.toString());
     }
   }
 
   String _calculateAmount(int amount) {
     return (amount * 100).toString();
   }
+}
 
-  Future<void> makePaymentPremium(BuildContext context) async {
-    try {
-      String? paymentIntentClientSecret = await _createPaymentIntent(29, 'mxn');
+Future<void> handlePro(
+    BuildContext context, bool isYearly, FirebaseAuth auth) async {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-      if (paymentIntentClientSecret == null) return;
+  try {
+    final user = auth.currentUser;
+    if (user != null) {
+      final now = DateTime.now();
+      final expiry = isYearly
+          ? DateTime(now.year + 1, now.month, now.day)
+          : DateTime(now.year, now.month + 1, now.day);
 
-      await Stripe.instance.initPaymentSheet(
-          paymentSheetParameters: SetupPaymentSheetParameters(
-        paymentIntentClientSecret: paymentIntentClientSecret,
-        merchantDisplayName: 'PetWalks Enterprise',
-      ));
-
-      await _processPayment(context);
-    } catch (e) {
-      print(e.toString());
-      _navigateToStatusScreen(context, 'Error', e.toString());
+      await _firestore.collection('users').doc(user.uid).set({
+        'isPremium': true,
+        'premiumUntil': Timestamp.fromDate(expiry),
+      }, SetOptions(merge: true));
     }
-  }
-
-  void _navigateToStatusScreen(
-      BuildContext context, String status, String message) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            PaymentStatusScreen(status: status, message: message),
-      ),
-    );
+  } catch (e) {
+    showErrorSnackBar(context, e.toString());
   }
 }
