@@ -16,6 +16,8 @@ class Estadisticas extends StatelessWidget {
     final lecturasPorMes = getLecturasPorMesRaw().map(
       (key, value) => MapEntry(key, ValueNotifier<int>(value)),
     );
+    // we will be implementing this page for statistics
+    // You can use the data above to create your statistics widgets
 
     return Scaffold(
       appBar: AppBar(
