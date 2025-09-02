@@ -14,14 +14,14 @@ class Estadisticas extends StatefulWidget {
 
 class _EstadisticasState extends State<Estadisticas> {
   late Future<Map<String, dynamic>> _estadisticasFuture;
-  late Future<Map<String, int>> _librosLeidosFuture;
+  late Future<List<String>> _librosLeidosFuture;
   final EstadisticasService _service = EstadisticasService();
 
   @override
   void initState() {
     super.initState();
     _estadisticasFuture = _service.getEstadisticas();
-    _librosLeidosFuture = _service.getLibrosLeidosByAutor();
+    _librosLeidosFuture = _service.getLibrosLeidosIds();
   }
 
   @override
@@ -218,11 +218,11 @@ class _EstadisticasState extends State<Estadisticas> {
                             as Map<String, int>),
                   ),
                   const SizedBox(height: 32),
-                  // Libros Leidos por Autor section
-                  const Text('📖 Libros Leídos por Autor',
+                  // Libros Leidos section
+                  const Text('📖 Libros Leídos',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
-                  FutureBuilder<Map<String, int>>(
+                  FutureBuilder<List<String>>(
                     future: _librosLeidosFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -263,14 +263,13 @@ class _EstadisticasState extends State<Estadisticas> {
                         padding: const EdgeInsets.all(16),
                         child: SizedBox(
                           height: 300,
-                          child: LibrosLeidosAutor(
-                            librosPorAutor: snapshot.data!,
+                          child: LibrosLeidos(
+                            libros: snapshot.data!,
                           ),
                         ),
                       );
                     },
                   ),
-                  // ...existing code for more charts/widgets if needed...
                 ],
               ),
             );

@@ -1,16 +1,16 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 
-class LibrosLeidosAutor extends StatefulWidget {
-  final Map<String, int> librosPorAutor;
+class LibrosLeidos extends StatefulWidget {
+  final List<String> libros;
 
-  const LibrosLeidosAutor({super.key, required this.librosPorAutor});
+  const LibrosLeidos({super.key, required this.libros});
 
   @override
-  State<LibrosLeidosAutor> createState() => _LibrosLeidosAutorState();
+  State<LibrosLeidos> createState() => _LibrosLeidosState();
 }
 
-class _LibrosLeidosAutorState extends State<LibrosLeidosAutor> {
+class _LibrosLeidosState extends State<LibrosLeidos> {
   static const List<Color> pieColors = [
     Colors.blue,
     Colors.red,
@@ -24,64 +24,94 @@ class _LibrosLeidosAutorState extends State<LibrosLeidosAutor> {
 
   @override
   Widget build(BuildContext context) {
-    final librosPorAutor = widget.librosPorAutor;
-    final total = librosPorAutor.values.isNotEmpty
-        ? librosPorAutor.values.reduce((a, b) => a + b)
-        : 1;
+    final libros = widget.libros;
+    // Count occurrences of each book
+    final Map<String, int> librosCounts = {};
+    for (final libro in libros) {
+      librosCounts[libro] = (librosCounts[libro] ?? 0) + 1;
+    }
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
       children: [
-        AspectRatio(
-          aspectRatio: 2,
-          child: PieChart(
-            PieChartData(
-              sections:
-                  librosPorAutor.entries.toList().asMap().entries.map((entry) {
-                final index = entry.key;
-                final autor = entry.value.key;
-                final cantidad = entry.value.value;
-                final percent = (cantidad / total) * 100;
-
-                return PieChartSectionData(
-                  value: cantidad.toDouble(),
-                  title: '$autor\n${percent.toStringAsFixed(1)}%',
-                  color: pieColors[index % pieColors.length],
-                  radius: 60,
-                  titleStyle: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  titlePositionPercentageOffset: 0.6,
-                );
-              }).toList(),
-              sectionsSpace: 2,
-              centerSpaceRadius: 40,
-            ),
+        Text(
+          "Libros Leídos: ${libros.length}",
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 16),
-        Wrap(
-          spacing: 16,
-          children: librosPorAutor.keys.toList().asMap().entries.map((entry) {
-            final index = entry.key;
-            final autor = entry.value;
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  color: pieColors[index % pieColors.length],
-                ),
-                const SizedBox(width: 4),
-                Text(autor),
-              ],
-            );
-          }).toList(),
+        if (libros.isEmpty)
+          const Text("No hay libros para mostrar")
+        else
+          SizedBox(
+            height: 150,
+            child: PieChart(
+              PieChartData(
+                sections: _getSections(librosCounts),
+                sectionsSpace: 2,
+                centerSpaceRadius: 40,
+                startDegreeOffset: -90,
+              ),
+            ),
+          ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              children: _buildLegend(librosCounts),
+            ),
+          ),
         ),
       ],
     );
+  }
+
+  List<PieChartSectionData> _getSections(Map<String, int> librosCounts) {
+    int index = 0;
+    return librosCounts.entries.map((entry) {
+      final color = pieColors[index % pieColors.length];
+      index++;
+      return PieChartSectionData(
+        color: color,
+        value: entry.value.toDouble(),
+        title: '${entry.value}',
+        radius: 50,
+        titleStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      );
+    }).toList();
+  }
+
+  List<Widget> _buildLegend(Map<String, int> librosCounts) {
+    int index = 0;
+    return librosCounts.entries.map((entry) {
+      final color = pieColors[index % pieColors.length];
+      index++;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2.0),
+        child: Row(
+          children: [
+            Container(
+              width: 16,
+              height: 16,
+              color: color,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                entry.key,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text('${entry.value}'),
+          ],
+        ),
+      );
+    }).toList();
   }
 }

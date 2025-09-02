@@ -78,33 +78,78 @@ class EstadisticasService {
       if (!userDoc.exists) return {};
 
       final userData = userDoc.data();
-      final librosLeidos = userData?['libros_leidos'] as List<dynamic>?;
+      final librosLeidosRaw = userData?['libros_leidos'];
 
-      if (librosLeidos == null || librosLeidos.isEmpty) return {};
+      print('Debug - libros_leidos raw data: $librosLeidosRaw');
+      print('Debug - libros_leidos type: ${librosLeidosRaw.runtimeType}');
+
+      // libros_leidos should be an array of strings
+      if (librosLeidosRaw == null || librosLeidosRaw is! List) {
+        print('Debug - libros_leidos is not a list or is null');
+        return {};
+      }
+
+      final librosLeidosIds = librosLeidosRaw.cast<String>();
+
+      if (librosLeidosIds.isEmpty) {
+        print('Debug - libros_leidos list is empty');
+        return {};
+      }
+
+      print('Debug - Book IDs to fetch: $librosLeidosIds');
 
       Map<String, int> librosPorAutor = {};
 
       // Get book details for each book in libros_leidos
-      for (final libroId in librosLeidos) {
+      for (final libroId in librosLeidosIds) {
         try {
-          final libroDoc = await firestore
-              .collection('libros')
-              .doc(libroId.toString())
-              .get();
+          print('Debug - Fetching book with ID: $libroId');
+          final libroDoc =
+              await firestore.collection('libros').doc(libroId).get();
           if (libroDoc.exists) {
             final libroData = libroDoc.data();
             final autor = libroData?['autor'] as String? ?? 'Autor desconocido';
+            print('Debug - Found book by author: $autor');
             librosPorAutor[autor] = (librosPorAutor[autor] ?? 0) + 1;
+          } else {
+            print('Debug - Book document $libroId does not exist');
           }
         } catch (e) {
           // Skip this book if there's an error
+          print('Error fetching book $libroId: $e');
           continue;
         }
       }
 
+      print('Debug - Final result: $librosPorAutor');
       return librosPorAutor;
     } catch (e) {
+      print('Error in getLibrosLeidosByAutor: $e');
       return {};
+    }
+  }
+
+  Future<List<String>> getLibrosLeidosIds() async {
+    final user = auth.currentUser;
+    if (user == null) return [];
+
+    try {
+      final userDoc = await firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) return [];
+
+      final userData = userDoc.data();
+      final librosLeidosRaw = userData?['libros_leidos'];
+
+      // libros_leidos should be an array of strings
+      if (librosLeidosRaw == null || librosLeidosRaw is! List) {
+        return [];
+      }
+
+      final librosLeidosIds = librosLeidosRaw.cast<String>();
+      return librosLeidosIds;
+    } catch (e) {
+      print('Error in getLibrosLeidosIds: $e');
+      return [];
     }
   }
 }
